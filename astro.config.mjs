@@ -4,6 +4,8 @@ import { defineConfig } from 'astro/config';
 import tailwindcss from '@tailwindcss/vite';
 import sitemap from '@astrojs/sitemap';
 
+import cloudflare from '@astrojs/cloudflare';
+
 // https://astro.build/config
 export default defineConfig({
   // Required for sitemap generation and absolute canonical/OG URLs.
@@ -25,5 +27,7 @@ export default defineConfig({
         return item;
       }
     })
-  ]
+  ],
+
+  adapter: cloudflare()
 });
