@@ -1,0 +1,168 @@
+---
+/**
+ * Nav — sticky top bar, 64px per DESIGN.md.
+ *
+ * Nav-scale CTAs use the 6px radius; the 100px marketing pill never appears
+ * here. No hover-only mega menu: every destination is a real <a>, and the
+ * mobile menu is a plain disclosure so keyboard and screen-reader users get the
+ * same paths as everyone else.
+ */
+import Button from "./Button.astro";
+
+const links = [
+  { href: "/tests", label: "All Tests" },
+  { href: "/fixer", label: "Stuck Pixel Fixer" },
+  { href: "/guides", label: "Guides" },
+  { href: "/report", label: "My Report" },
+];
+
+const path = Astro.url.pathname;
+const isActive = (href: string) =>
+  path === href || (href !== "/" && path.startsWith(`${href}/`));
+---
+
+<header
+  class="sticky top-0 z-50 border-b border-hairline bg-canvas/85 backdrop-blur-md"
+>
+  <nav
+    aria-label="Main"
+    class="mx-auto flex h-16 max-w-page items-center gap-4 px-4 md:px-6"
+  >
+    <a
+      href="/"
+      class="flex shrink-0 items-center gap-2 text-body-sm font-medium text-ink"
+    >
+      <!-- Wordmark glyph: a 3x3 grid with one cell out, i.e. a dead pixel. -->
+      <svg
+        width="20"
+        height="20"
+        viewBox="0 0 20 20"
+        fill="none"
+        aria-hidden="true"
+      >
+        <rect width="20" height="20" rx="4" fill="#171717"></rect>
+        <rect x="4" y="4" width="3.5" height="3.5" rx="1" fill="#fff"></rect>
+        <rect x="8.25" y="4" width="3.5" height="3.5" rx="1" fill="#fff"></rect>
+        <rect x="12.5" y="4" width="3.5" height="3.5" rx="1" fill="#fff"></rect>
+        <rect x="4" y="8.25" width="3.5" height="3.5" rx="1" fill="#fff"></rect>
+        <!-- the dead one -->
+        <rect
+          x="8.25"
+          y="8.25"
+          width="3.5"
+          height="3.5"
+          rx="1"
+          fill="#4d4d4d"
+          fill-opacity="0.35"></rect>
+        <rect x="12.5" y="8.25" width="3.5" height="3.5" rx="1" fill="#fff"
+        ></rect>
+        <rect x="4" y="12.5" width="3.5" height="3.5" rx="1" fill="#fff"></rect>
+        <rect x="8.25" y="12.5" width="3.5" height="3.5" rx="1" fill="#fff"
+        ></rect>
+        <rect x="12.5" y="12.5" width="3.5" height="3.5" rx="1" fill="#fff"
+        ></rect>
+      </svg>
+      <span translate="no">Dead Pixel Test</span>
+    </a>
+
+    <ul class="ml-2 hidden items-center gap-1 md:flex">
+      {
+        links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              aria-current={isActive(link.href) ? "page" : undefined}
+              class:list={[
+                "rounded-full px-3 py-1.5 text-body-sm transition-colors duration-150 ease-out",
+                isActive(link.href)
+                  ? "bg-canvas-soft-2 text-ink"
+                  : "text-body hover:bg-canvas-soft-2 hover:text-ink",
+              ]}
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <div class="ml-auto flex items-center gap-2">
+      <Button href="/test/sequence" shape="nav" size="sm" class="hidden sm:flex">
+        Start Test
+      </Button>
+
+      <button
+        type="button"
+        id="nav-toggle"
+        aria-expanded="false"
+        aria-controls="nav-mobile"
+        aria-label="Open menu"
+        class="flex size-8 items-center justify-center rounded-sm text-ink hover:bg-canvas-soft-2 md:hidden"
+      >
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 18 18"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.5"
+          aria-hidden="true"
+        >
+          <path d="M2 5h14M2 9h14M2 13h14"></path>
+        </svg>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Mobile disclosure. Hidden with [hidden] so it is removed from the a11y
+       tree entirely rather than just visually offscreen. -->
+  <div
+    id="nav-mobile"
+    hidden
+    class="border-t border-hairline bg-canvas px-4 pb-4 md:hidden"
+  >
+    <ul class="flex flex-col py-2">
+      {
+        links.map((link) => (
+          <li>
+            <a
+              href={link.href}
+              aria-current={isActive(link.href) ? "page" : undefined}
+              class="block rounded-sm px-2 py-2.5 text-body-md text-body hover:bg-canvas-soft-2 hover:text-ink"
+            >
+              {link.label}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+    <Button href="/test/sequence" shape="nav" size="md" class="w-full">
+      Start Test
+    </Button>
+  </div>
+</header>
+
+<script>
+  const toggle = document.getElementById("nav-toggle");
+  const panel = document.getElementById("nav-mobile");
+
+  if (toggle && panel) {
+    const setOpen = (open: boolean) => {
+      panel.hidden = !open;
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Close menu" : "Open menu");
+    };
+
+    toggle.addEventListener("click", () => {
+      // `hidden` is typed `boolean | string` since hidden="until-found".
+      setOpen(Boolean(panel.hidden));
+    });
+
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !panel.hidden) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+  }
+</script>

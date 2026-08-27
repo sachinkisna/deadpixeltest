@@ -1,0 +1,347 @@
+---
+/**
+ * /privacy — indexed on purpose.
+ *
+ * Most privacy pages are a liability document. This one is a feature page: the
+ * site genuinely has no analytics, no cookies, no third-party requests and no
+ * server, and that is a real differentiator against every screen test that
+ * loads an ad network before it loads a white rectangle. So it is written in
+ * plain sentences with specifics — the actual storage key, the actual fields —
+ * rather than in legalese, and it is deliberately NOT noindex.
+ *
+ * The stored-fields list mirrors the Session interface in lib/defects.ts. If
+ * that interface gains a field, this page has to gain a row, and the date at
+ * the top has to move.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Card from "../components/site/Card.astro";
+import Badge from "../components/site/Badge.astro";
+import Eyebrow from "../components/site/Eyebrow.astro";
+import Button from "../components/site/Button.astro";
+
+const LAST_UPDATED = "27 August 2026";
+
+/** The flat claims, stated once, without qualification. */
+const nots = [
+  "No analytics. No Google Analytics, no Plausible, no Fathom, no self-hosted alternative, no page-view counter of any kind.",
+  "No tracking pixels, beacons or fingerprinting. Nothing measures your screen in order to identify you; the screen metrics the tool reads never leave the browser.",
+  "No cookies. Not for sessions, not for preferences, not for consent. There is no cookie banner because there is nothing to consent to.",
+  "No advertising. No ad network, no ad request, no affiliate tracking, no sponsored placement.",
+  "No account. There is nothing to sign up for, no email field, no password, no sign-in with anything.",
+  "No server-side storage. There is no database, no logging pipeline and no backend that receives your results, because the site is static files.",
+  "No third-party requests. The browser contacts this origin and nothing else — see the section on fonts below.",
+];
+
+/**
+ * Field-by-field, matching the Session interface. Written out in full because
+ * "we store some diagnostic data" is exactly the phrasing this page exists to
+ * avoid.
+ */
+const stored = [
+  {
+    field: "defects[].x, defects[].y",
+    what: "Normalised coordinates from 0 to 1, origin top left. Stored as a fraction of the viewport rather than in pixels so a report survives a window resize or a move to another display.",
+  },
+  {
+    field: "defects[].type",
+    what: "Which kind of fault you marked: dead, hot, stuck or unsure.",
+  },
+  {
+    field: "defects[].fillSlug",
+    what: "Which of the twelve fills you were looking at when you marked it, e.g. white or grey-50.",
+  },
+  {
+    field: "defects[].at",
+    what: "A millisecond timestamp for the moment you marked it, used only to keep the list in order.",
+  },
+  {
+    field: "completedFills",
+    what: "The slugs of the fills you have viewed, so the progress grid can show what is left.",
+  },
+  {
+    field: "screen",
+    what: "Screen metrics as the browser reports them: CSS width and height, devicePixelRatio, the device pixel dimensions derived from those two, and the reported colour depth. Needed to compute a per-million fault rate for a fault class.",
+  },
+  {
+    field: "id, startedAt, updatedAt, version",
+    what: "A random identifier generated on your device to distinguish one run from another, two timestamps, and a schema version so a stale log can be recognised and discarded rather than misread.",
+  },
+];
+
+const nothingToExercise = [
+  {
+    title: "Nothing to request",
+    body: "A subject access request would return an empty set. There is no record of your visit anywhere but in your own browser.",
+  },
+  {
+    title: "Nothing to export",
+    body: "The only copy of your defect log is on your device, and your report page renders it from there. Nothing has to be fetched from anywhere.",
+  },
+  {
+    title: "Nothing to delete",
+    body: "There is no server-side copy to erase. Clearing the log in your browser is the deletion, and it is complete.",
+  },
+];
+---
+
+<SiteLayout
+  title="Privacy — No Analytics, No Cookies, No Server, Nothing Collected"
+  description="Dead Pixel Test collects nothing at all. No analytics, no tracking pixels, no cookies, no advertising, no account and no server. Your defect log lives in your own browser's localStorage and is never transmitted."
+  bleed
+>
+  <!-- ── Header ────────────────────────────────────────────────────────── -->
+  <header class="border-b border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 pt-12 pb-14 md:px-6 md:pt-16">
+      <Eyebrow>Privacy</Eyebrow>
+      <h1 class="mt-3 max-w-3xl text-display-lg text-ink">
+        Nothing here collects anything about you.
+      </h1>
+      <p class="mt-4 max-w-prose text-body-lg text-body">
+        This is not the usual hedged version of that sentence. There is no
+        analytics script, no cookie, no advertising, no account and no server
+        that could receive a result. What you find on your screen stays on your
+        screen &mdash; written out below field by field, so you can check the
+        claim instead of taking it.
+      </p>
+      <div class="mt-6 flex flex-wrap items-center gap-2">
+        <Badge tone="success">No analytics</Badge>
+        <Badge tone="success">No cookies</Badge>
+        <Badge tone="success">No third-party requests</Badge>
+      </div>
+      <p class="mt-6 text-caption text-mute">
+        Last updated {LAST_UPDATED}
+      </p>
+    </div>
+  </header>
+
+  <!-- ── The flat claims ───────────────────────────────────────────────── -->
+  <section
+    aria-labelledby="short"
+    class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16"
+  >
+    <Eyebrow>The short version</Eyebrow>
+    <h2 id="short" class="mt-2 max-w-2xl text-display-md text-ink">
+      Seven things this site does not do.
+    </h2>
+
+    <ul class="mt-8 grid max-w-prose gap-3">
+      {
+        nots.map((claim) => (
+          <li>
+            <Card elevation="e1" padding="md">
+              <p class="text-body-md text-body">{claim}</p>
+            </Card>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="mt-6 max-w-prose text-body-sm text-mute">
+      If any of that ever changes, this page changes first and the date at the
+      top moves with it.
+    </p>
+  </section>
+
+  <!-- ── What is stored, and where ─────────────────────────────────────── -->
+  <section aria-labelledby="stored" class="border-y border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+      <Eyebrow>What is stored</Eyebrow>
+      <h2 id="stored" class="mt-2 max-w-2xl text-display-md text-ink">
+        One entry in your browser's localStorage.
+      </h2>
+
+      <div class="mt-3 flex max-w-prose flex-col gap-4 text-body-md text-body">
+        <p>
+          When you mark a defect during a test, it is saved under the key
+          <code
+            class="rounded-xs bg-canvas-soft-2 px-1.5 py-0.5 font-mono text-code text-ink"
+            >dpt.session.v1</code
+          > in your browser's localStorage. That store belongs to your device and
+          your browser profile. It is not transmitted anywhere, at any point,
+          because there is nowhere for it to be transmitted to.
+        </p>
+        <p>
+          The report page reads that same entry back out and grades it locally.
+          Nothing round-trips through a network.
+        </p>
+      </div>
+
+      <dl class="mt-8 grid max-w-prose gap-5">
+        {
+          stored.map((row) => (
+            <div class="border-t border-hairline pt-4">
+              <dt class="font-mono text-code text-ink">{row.field}</dt>
+              <dd class="mt-1 text-body-sm text-body">{row.what}</dd>
+            </div>
+          ))
+        }
+      </dl>
+
+      <p class="mt-8 max-w-prose text-body-md text-body">
+        There is no name, no email address, no IP address, no device identifier,
+        no advertising ID and no browsing history in that list. The screen
+        metrics are there because a fault class is a rate per million pixels and
+        the arithmetic needs a pixel count &mdash; not because anyone is
+        profiling your hardware.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Deletion is permanent ─────────────────────────────────────────── -->
+  <section
+    aria-labelledby="clearing"
+    class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16"
+  >
+    <Eyebrow>Deleting it</Eyebrow>
+    <h2 id="clearing" class="mt-2 max-w-2xl text-display-md text-ink">
+      Clearing your browser data destroys the log for good.
+    </h2>
+
+    <aside
+      aria-label="Warning about permanent deletion"
+      class="mt-6 max-w-prose rounded-lg border border-warning bg-warning-soft p-5"
+    >
+      <p class="text-body-sm font-medium text-warning-deep">
+        There is no backup, anywhere
+      </p>
+      <p class="mt-2 text-body-sm text-warning-deep">
+        Because nothing is ever uploaded, there is no server copy to restore
+        from. Clearing site data, using a browser's &ldquo;clear history&rdquo;
+        tool, resetting the profile, or pressing the clear button inside the tool
+        deletes your defect log permanently and irrecoverably. This is the
+        unavoidable other half of the promise on this page.
+      </p>
+    </aside>
+
+    <div class="mt-6 flex max-w-prose flex-col gap-4 text-body-md text-body">
+      <p>
+        If a run matters to you &mdash; a warranty claim, say &mdash; finish it
+        in one sitting and get what you need out of the report before you tidy up
+        your browser. A screenshot of the report is the simplest way to keep a
+        record, and it is a record you control entirely.
+      </p>
+      <p>
+        Two related behaviours worth knowing. In a private or incognito window,
+        the log is discarded when you close the window, which is the browser's
+        doing and not something the site can or should override. And if
+        localStorage is unavailable or full, the tool keeps your run in memory
+        for the visit and simply cannot persist it &mdash; it will not fall back
+        to sending anything anywhere.
+      </p>
+      <p>
+        The clear control lives on the guided test page and on your report, next
+        to the data it deletes. It asks for confirmation first, because the
+        deletion cannot be undone.
+      </p>
+    </div>
+
+    <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+      <Button href="/report" size="md" shape="pill" variant="secondary">
+        Open my report
+      </Button>
+      <Button href="/test/sequence" size="md" shape="pill" variant="secondary">
+        Go to the guided test
+      </Button>
+    </div>
+  </section>
+
+  <!-- ── No third-party requests ───────────────────────────────────────── -->
+  <section aria-labelledby="third" class="border-y border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+      <Eyebrow>Third parties</Eyebrow>
+      <h2 id="third" class="mt-2 max-w-2xl text-display-md text-ink">
+        Your browser only ever talks to this site.
+      </h2>
+
+      <div class="mt-3 flex max-w-prose flex-col gap-4 text-body-md text-body">
+        <p>
+          The typefaces are Geist and Geist Mono, self-hosted through Fontsource
+          and served from this origin as part of the site's own assets. No
+          request goes to Google Fonts or any other font host, so no third party
+          learns your IP address, your user agent or which page you were reading
+          by way of a font.
+        </p>
+        <p>
+          The same applies to everything else on the page: no CDN, no external
+          scripts, no tag manager, no embedded video, no iframes, no social
+          widgets, no comment system, no error-reporting service, no chat
+          bubble. Open your browser's network panel on any page here and the
+          request list is this origin and nothing else.
+        </p>
+        <p>
+          One consequence worth naming: because there are no third parties,
+          there is no chain of processors to disclose and no sub-processor list
+          to keep current. That absence is the whole design, not an omission.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Offline cache ─────────────────────────────────────────────────── -->
+  <section
+    aria-labelledby="offline"
+    class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16"
+  >
+    <Eyebrow>Offline cache</Eyebrow>
+    <h2 id="offline" class="mt-2 max-w-2xl text-display-md text-ink">
+      A service worker keeps a local copy so the suite works offline.
+    </h2>
+
+    <div class="mt-3 flex max-w-prose flex-col gap-4 text-body-md text-body">
+      <p>
+        On your first visit the site registers a service worker, which stores
+        the pages, styles and fonts in your browser's cache. That is what lets
+        the whole suite run with the network off &mdash; useful in a shop, a
+        warehouse, or anywhere you are testing hardware that is not connected to
+        anything yet.
+      </p>
+      <p>
+        That cache is on your device, managed by your browser, and holds only
+        this site's own files. It is not a record of what you did: it contains
+        the site, not your session. Clearing site data or unregistering the
+        worker removes it, and the registration is written so that a failure
+        &mdash; private mode, an unsupported browser &mdash; never breaks the
+        page.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Nothing to exercise rights against ────────────────────────────── -->
+  <section aria-labelledby="rights" class="border-y border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+      <Eyebrow>Your data rights</Eyebrow>
+      <h2 id="rights" class="mt-2 max-w-2xl text-display-md text-ink">
+        There is nothing on this side to request, export or delete.
+      </h2>
+      <p class="mt-3 max-w-prose text-body-md text-body">
+        Data rights matter, and they are exercised against an organisation that
+        holds data about you. No collection means there is nothing held here, so
+        there is no request to make and nobody who has to answer it. That is a
+        stronger position than a well-drafted policy, and it is the reason this
+        page can be short.
+      </p>
+
+      <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {
+          nothingToExercise.map((item) => (
+            <li>
+              <Card elevation="e2" padding="lg" class="h-full">
+                <h3 class="text-body-lg font-medium text-ink">{item.title}</h3>
+                <p class="mt-2 text-body-sm text-body">{item.body}</p>
+              </Card>
+            </li>
+          ))
+        }
+      </ul>
+
+      <p class="mt-8 max-w-prose text-body-sm text-mute">
+        Last updated {LAST_UPDATED}. Read
+        <a
+          href="/about"
+          class="text-link underline underline-offset-2 transition-colors duration-150 ease-out hover:text-link-deep"
+          >the method page</a
+        > for what the tests can and cannot measure.
+      </p>
+    </div>
+  </section>
+</SiteLayout>

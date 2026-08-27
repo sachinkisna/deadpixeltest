@@ -1,0 +1,452 @@
+---
+/**
+ * Backlight uniformity.
+ *
+ * Flat grey fields plus an optional thirds grid. The grid exists so a user can
+ * say "bottom-right cell" in a warranty email instead of "over on the right a
+ * bit" — it is an alignment aid, so `fieldRunner` defaults it to off and never
+ * leaves it painting over a field the user is trying to judge.
+ *
+ * The field list lives in the client `<script>` at the foot of this file, which
+ * is the single source of truth for the runner. Hexes and names are pulled from
+ * `lib/palette` in both places so no colour is written out by hand twice.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import TestSurface from "../../components/test/TestSurface.astro";
+import TestHud from "../../components/test/TestHud.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Card from "../../components/site/Card.astro";
+import { getFill } from "../../lib/palette";
+import { getTest } from "../../lib/tests";
+
+// Fails the build if the registry entry ever disappears — the related-test
+// list and the nav both derive from it.
+const test = getTest("uniformity");
+if (!test) throw new Error("Missing registry entry: uniformity");
+
+/** Field order. Mirrored by the `<script>` below, which adds the copy. */
+const ORDER = ["grey-50", "grey-75", "grey-25", "white", "grey-12"] as const;
+
+const fields = ORDER.map((slug) => {
+  const fill = getFill(slug);
+  if (!fill) throw new Error(`Missing fill: ${slug}`);
+  return fill;
+});
+
+const first = fields[0];
+if (!first) throw new Error("uniformity: empty field list");
+
+const FAULTS = [
+  {
+    term: "Mura",
+    gloss: "Japanese for unevenness",
+    body: "Irregular blotchy patches with soft, wandering edges, anywhere on the panel. Caused by an uneven cell gap or by pressure on the panel — a shipping knock or an over-tight bezel screw. Stays put when you move your head.",
+  },
+  {
+    term: "Clouding",
+    gloss: "diffuser fault",
+    body: "Large soft light patches, like thin cloud. Most visible on dark grey and near black. Comes from uneven backlight diffusion or a diffuser sheet that has warped, often with heat.",
+  },
+  {
+    term: "Hot spots",
+    gloss: "also called flashlighting",
+    body: "Discrete bright zones hugging one edge, usually evenly spaced, because each one sits directly in front of an edge-lit LED. Count them: a regular rhythm along an edge is the giveaway.",
+  },
+  {
+    term: "Vignetting",
+    gloss: "corner falloff",
+    body: "A gradual, symmetrical darkening towards the corners with no edge or patch to it. Very common, very rarely worth acting on.",
+  },
+] as const;
+---
+
+<TestPageLayout
+  title="Backlight Uniformity Test — Check for Mura, Clouding and Hot Spots"
+  description="Full-screen flat grey fields with an optional thirds grid, for judging backlight uniformity. Explains how to tell mura from clouding, flashlighting and vignetting — and how much unevenness is normal."
+  heading="Backlight uniformity test"
+  lede="A flat grey field should look identical corner to corner. This walks you through five of them and names the four faults people usually lump together."
+  category="panel"
+  slug={test.slug}
+  needsDarkRoom
+  limitation="A browser cannot measure luminance. There is no cd/m² figure and no ΔE here, and there cannot be — this is a visual comparison, nothing more. Nor is a phone photo evidence: auto-exposure lifts the dark areas while the phone's own lens vignetting darkens the corners, so a photo routinely shows unevenness far worse than your eyes do. Judge it by eye, in the room you actually use the screen in."
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel
+        label="Launch uniformity fields"
+        needsDarkRoom
+        prerequisites={[
+          "Set the brightness you actually use every day, not maximum.",
+          "Let the screen warm up for 20 to 30 minutes first — uniformity shifts as the backlight reaches thermal equilibrium.",
+          "Sit centred, about an arm's length back, and look at the whole field rather than hunting corner by corner.",
+        ]}
+      />
+
+      <section class="mt-12">
+        <Eyebrow as="h2">What it shows</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Why a flat field and not a photograph
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Uniformity is how evenly the backlight and the diffuser behind your
+            panel spread light across its surface. Real content hides that
+            completely: your eye reads a bright patch in a photograph as part of
+            the photograph. Strip the content away and leave one flat value, and
+            the only thing left on screen is the panel itself.
+          </p>
+          <p>
+            Mid grey comes first because it is the standard surface for this
+            judgement &mdash; the liquid crystal layer is being driven at a
+            partial voltage, so diffusion faults and cell-gap variation both show
+            clearly. Light grey exposes gentle falloff, while dark grey and near
+            black are where clouding is easiest to see. White is the least
+            useful of the five and is included last for that reason: a bright
+            field masks almost everything except gross patches.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">How to read it</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Four faults, and they are not the same thing
+        </h2>
+        <p class="mt-3 text-body-md text-body">
+          A good result is boring: the field looks like one continuous surface,
+          and moving your eyes across it changes nothing. If something does stand
+          out, work out which of these it is before you call it a defect. They
+          have different causes and different chances of being replaced.
+        </p>
+        <dl class="mt-5 flex flex-col gap-4">
+          {
+            FAULTS.map((fault) => (
+              <div>
+                <dt class="text-body-md font-medium text-ink">
+                  {fault.term}
+                  <span class="text-body-sm text-mute"> &mdash; {fault.gloss}</span>
+                </dt>
+                <dd class="mt-1 text-body-md text-body">{fault.body}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p class="mt-4 text-body-md text-body">
+          Turn on the <strong class="font-medium text-ink">Grid</strong> button in
+          the controls once you have found something. It divides the screen into
+          thirds, so you can record the fault as a cell reference &mdash;
+          &ldquo;centre-left cell, visible on dark grey and near black&rdquo;
+          &mdash; which is far more use to a support agent than
+          &ldquo;patchy&rdquo;. Switch it back off before you judge the field
+          again; hairlines drawn over a surface change how even it looks.
+        </p>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Honest expectations</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Every LCD panel is non-uniform
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            There is no such thing as a perfectly even LCD. Edge-lit panels are
+            lit from a strip along one or two sides and the light is spread
+            sideways through a stack of plastic sheets; some variation is
+            guaranteed by that design. A full-screen grey in a dark room is a
+            deliberately worst-case view, and it will make almost any panel look
+            bad. That is what it is for &mdash; but do not mistake it for how
+            your screen behaves in use.
+          </p>
+          <p>
+            So apply the practical test. Go back to a document, a browser window,
+            a film, at your normal brightness in your normal room. If you cannot
+            find the patch again, you have a normal panel, and nothing here is
+            worth a return. If it is still obvious in ordinary content &mdash;
+            a grey web page, a spreadsheet, a dark scene &mdash; then it is a
+            real problem with your unit.
+          </p>
+          <p>
+            Two things quietly ruin this test. Judging at maximum brightness
+            exaggerates every fault well beyond what you will ever see, and
+            judging from cold is simply the wrong measurement, since the
+            backlight's output and the diffuser's shape both change over the
+            first half hour of use.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">If it is genuinely bad</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">What to do about it</h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Uniformity is the weakest ground for a warranty claim of any panel
+            fault, because most consumer warranties simply do not specify a
+            uniformity tolerance &mdash; unlike dead pixels, which have ISO
+            9241-307 classes to point at. Your strongest route is almost always
+            the retailer's return window rather than the manufacturer's warranty
+            department, so check this on the day the screen arrives, not in month
+            four.
+          </p>
+          <p>
+            Write down the cell reference, which fields showed it, and the
+            brightness you used. If you can, run the same test on a second unit
+            of the same model: uniformity varies enough between individual panels
+            that a swap often fixes it, and knowing that changes the
+            conversation from a complaint into a straightforward exchange.
+          </p>
+          <p>
+            Do not press, massage or clamp the panel to even it out. Pressure is
+            a cause of mura, not a cure for it.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Quick reference</Eyebrow>
+        <ul class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          <li>
+            <span class="font-medium text-ink">Blotchy patches</span> &rarr; mura
+          </li>
+          <li>
+            <span class="font-medium text-ink">Soft clouds on dark greys</span>
+            &rarr; clouding
+          </li>
+          <li>
+            <span class="font-medium text-ink">Bright spots along one edge</span>
+            &rarr; hot spots
+          </li>
+          <li>
+            <span class="font-medium text-ink">Even corner darkening</span> &rarr;
+            vignetting
+          </li>
+          <li class="border-t border-hairline pt-3 text-mute">
+            All four are common in mild form. Only judge severity in real content
+            at your normal brightness.
+          </li>
+        </ul>
+      </Card>
+
+      <div class="mt-6">
+        <Eyebrow as="h2">The five fields</Eyebrow>
+        <ul class="mt-3 flex flex-col gap-2">
+          {
+            fields.map((fill) => (
+              <li class="flex items-center gap-2 text-body-sm text-body">
+                <span
+                  class="size-3.5 shrink-0 rounded-xs shadow-e1"
+                  style={`background-color:${fill.hex}`}
+                  aria-hidden="true"
+                />
+                {fill.name}
+                <span class="ml-auto font-mono text-code text-mute uppercase">
+                  {fill.hex}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <TestSurface slot="surface" id="surface">
+    <!-- The measured field. role="img" belongs here, not on the container. -->
+    <div
+      class="dpt-fill"
+      data-field-layer
+      data-field-id={first.slug}
+      role="img"
+      aria-label={`Full screen ${first.name} field`}
+      style={`background-color:${first.hex}`}
+    >
+    </div>
+
+    <!-- Alignment aid only, hidden by default. Hairlines are white cored with a
+         black halo, the same trick the defect markers use, so they stay legible
+         on white and on near black without any opacity or blending. -->
+    <div class="uni-grid" aria-hidden="true">
+      <span class="uni-line uni-line--v" style="left:33.3333%"></span>
+      <span class="uni-line uni-line--v" style="left:66.6667%"></span>
+      <span class="uni-line uni-line--h" style="top:33.3333%"></span>
+      <span class="uni-line uni-line--h" style="top:66.6667%"></span>
+    </div>
+
+    <TestHud slot="hud" label="Uniformity controls">
+      <p data-hud-note class="dpt-hud-note" hidden></p>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-nav-prev
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Previous field"
+        >
+          <span aria-hidden="true">&#9664;</span>
+        </button>
+        <span class="dpt-hud-label">
+          <b data-field-name>{first.name}</b>
+          <span class="dpt-hud-sub" data-field-position>1 / {fields.length}</span>
+        </span>
+        <button
+          type="button"
+          data-nav-next
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Next field"
+        >
+          <span aria-hidden="true">&#9654;</span>
+        </button>
+      </div>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-grid-toggle
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Grid
+        </button>
+        <button
+          type="button"
+          data-hud-help
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Help
+          <kbd class="dpt-hud-kbd">H</kbd>
+        </button>
+        <button type="button" data-surface-exit class="dpt-hud-btn">
+          Exit
+          <kbd class="dpt-hud-kbd">Esc</kbd>
+        </button>
+      </div>
+
+      <div data-help-panel hidden class="uni-help">
+        <p data-field-reveals></p>
+        <p class="dpt-hud-sub">
+          <kbd class="dpt-hud-kbd">&larr;</kbd>
+          <kbd class="dpt-hud-kbd">&rarr;</kbd> change field &middot;
+          <kbd class="dpt-hud-kbd">H</kbd> help &middot;
+          <kbd class="dpt-hud-kbd">Esc</kbd> exit &middot; Grid marks the thirds
+          so you can name the cell
+        </p>
+      </div>
+
+      <p data-field-status role="status" aria-live="polite" class="uni-sr"></p>
+    </TestHud>
+  </TestSurface>
+</TestPageLayout>
+
+<style>
+  .uni-grid {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+  }
+
+  /* fieldRunner flips data-grid on the surface. The surface element is rendered
+     by TestSurface, so it carries no scope hash of this page's — hence
+     :global() on that half of the selector. */
+  :global(.dpt-surface[data-grid="off"]) .uni-grid {
+    display: none;
+  }
+
+  .uni-line {
+    position: absolute;
+    display: block;
+    background-color: #ffffff;
+  }
+
+  .uni-line--v {
+    top: 0;
+    width: 1px;
+    height: 100%;
+    /* No blur, no alpha: a hard black halo either side, so the line reads on
+       #ffffff and on #1f1f1f alike without a compositing pass. */
+    box-shadow:
+      -1px 0 0 #000000,
+      1px 0 0 #000000;
+  }
+
+  .uni-line--h {
+    left: 0;
+    width: 100%;
+    height: 1px;
+    box-shadow:
+      0 -1px 0 #000000,
+      0 1px 0 #000000;
+  }
+
+  .uni-help {
+    width: 100%;
+    max-width: 34rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .uni-help[hidden] {
+    display: none;
+  }
+
+  .uni-help p + p {
+    margin-top: 0.375rem;
+  }
+
+  .uni-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { mountFieldRunner, type FieldDef } from "../../lib/fieldRunner";
+  import { getFill } from "../../lib/palette";
+
+  /**
+   * Field order plus the per-field guidance shown in the help panel. Colours
+   * come from the palette rather than being retyped, so this list can never
+   * disagree with the swatches rendered on the page.
+   */
+  const SPEC: ReadonlyArray<readonly [string, string]> = [
+    [
+      "grey-50",
+      "The standard field for uniformity. Blotchy patches with soft edges are mura; a regular row of bright spots along one edge is flashlighting from the LEDs behind it.",
+    ],
+    [
+      "grey-75",
+      "Light grey exposes gentle falloff and gradual corner darkening that a mid grey can hide. Look for a smooth brightness slope rather than distinct patches.",
+    ],
+    [
+      "grey-25",
+      "Dark grey is where clouding shows best — large, soft, cloud-shaped light patches from uneven diffusion. This is the most revealing field on most IPS panels.",
+    ],
+    [
+      "white",
+      "White masks almost everything except gross patches, and shows dust and stains instead. Useful as a sanity check, not as your verdict.",
+    ],
+    [
+      "grey-12",
+      "Near black separates clouding from backlight bleed. Bleed clings to the very edge of the panel; clouding sits inside it.",
+    ],
+  ];
+
+  const fields: FieldDef[] = SPEC.flatMap(([slug, reveals]) => {
+    const fill = getFill(slug);
+    return fill
+      ? [{ id: fill.slug, name: fill.name, hex: fill.hex, reveals }]
+      : [];
+  });
+
+  mountFieldRunner({ fields, grid: true });
+</script>

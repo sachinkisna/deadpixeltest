@@ -1,0 +1,23 @@
+---
+/**
+ * Eyebrow — the small monospace section label.
+ *
+ * DESIGN.md reserves the mono face for the technical layer: section eyebrows,
+ * code, terminal mockups. Body copy is never set in mono.
+ */
+export interface Props {
+  class?: string | undefined;
+  as?: "p" | "h2" | "span" | "div";
+}
+
+const { class: className, as: Tag = "p" } = Astro.props;
+---
+
+<Tag
+  class:list={[
+    "font-mono text-caption uppercase tracking-[0.08em] text-mute",
+    className,
+  ]}
+>
+  <slot />
+</Tag>

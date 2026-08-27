@@ -1,0 +1,216 @@
+---
+/**
+ * The guided sequence — the site's primary flow.
+ *
+ * Walks all twelve fills in light-to-dark order, tracking which ones the user
+ * has actually seen and collecting defect markers as they go, so the run ends
+ * with a report instead of a vague impression.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import FillSurface from "../../components/test/FillSurface.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Button from "../../components/site/Button.astro";
+import Card from "../../components/site/Card.astro";
+import { sequenceFills } from "../../lib/palette";
+import { getTest } from "../../lib/tests";
+
+const test = getTest("sequence");
+if (!test) throw new Error("Missing registry entry: sequence");
+
+const fills = sequenceFills();
+---
+
+<TestPageLayout
+  title="Guided Dead Pixel Test — 12 Full-Screen Fills, Step by Step"
+  description="Step through twelve exact full-screen colour fills in the order that makes screen faults easiest to see. Mark each defect as you find it and finish with an ISO 9241-307 fault class."
+  heading="Guided pixel test"
+  lede={test.description}
+  category="pixels"
+  slug="sequence"
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel
+        label="Start the sequence"
+        prerequisites={[
+          "Clean the screen with a dry microfibre cloth. Dust causes more false positives than real faults.",
+          "Dim the room. Faint stuck sub-pixels and clouding are invisible in daylight.",
+          "Set the display to its native resolution so you are looking at real pixels, not scaled ones.",
+        ]}
+      >
+        <p
+          data-run-summary
+          hidden
+          class="mt-5 rounded-md border border-hairline bg-canvas-soft-2 p-4 text-body-sm text-ink"
+        >
+        </p>
+      </LaunchPanel>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">The order</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Why these twelve, in this order
+        </h2>
+        <p class="mt-3 text-body-md text-body">
+          The run goes light to dark before it touches the primaries. Two
+          reasons: your pupils adapt gradually instead of being flashed from white
+          to black, and the greys expose backlight problems that both pure white
+          and pure black hide. The primaries and secondaries come last, because by
+          then you know which pixels to look at.
+        </p>
+
+        <ol class="mt-6 flex flex-col gap-3">
+          {
+            fills.map((fill, i) => (
+              <li class="flex items-start gap-3">
+                <span
+                  class="mt-0.5 size-5 shrink-0 rounded-xs shadow-e1"
+                  style={`background-color:${fill.hex}`}
+                  aria-hidden="true"
+                />
+                <div>
+                  <p class="text-body-sm font-medium text-ink">
+                    <span class="font-mono text-caption text-mute"
+                      >{String(i + 1).padStart(2, "0")}</span
+                    >{" "}
+                    {fill.name}{" "}
+                    <span class="font-mono text-caption text-mute uppercase"
+                      >{fill.hex}</span
+                    >
+                  </p>
+                  <p class="mt-0.5 text-body-sm text-body">{fill.reveals}</p>
+                </div>
+              </li>
+            ))
+          }
+        </ol>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Marking faults</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          How the log works
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Press <strong class="font-medium text-ink">Mark defect</strong> in the
+            control bar, choose what kind of fault it is, then tap the spot. A
+            ring appears around it &mdash; hollow, so you can still see the pixel
+            underneath. Tap the ring again to remove it.
+          </p>
+          <p>
+            If you are on a keyboard with no pointer, use
+            <strong class="font-medium text-ink">Log at centre</strong>. The
+            position will be approximate, but the fault class depends only on how
+            many faults of each type you found, so your grade is unaffected.
+          </p>
+          <p>
+            Everything is stored in this browser and nowhere else. There is no
+            account, no upload and no analytics, so clearing your browser data
+            deletes the log permanently.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Progress</Eyebrow>
+        <p
+          data-progress-text
+          class="mt-3 text-body-sm text-body"
+          data-numeric
+        >
+          Not started.
+        </p>
+        <ul class="mt-4 grid grid-cols-6 gap-1.5" data-progress-grid>
+          {
+            fills.map((fill) => (
+              <li
+                data-progress-cell={fill.slug}
+                title={fill.name}
+                class="aspect-square rounded-xs shadow-e1 opacity-30 transition-opacity duration-150 ease-out"
+                style={`background-color:${fill.hex}`}
+              />
+            ))
+          }
+        </ul>
+        <p class="mt-4 text-caption text-mute">
+          Filled squares are fills you have viewed in a run on this browser.
+        </p>
+        <div class="mt-5 flex flex-col gap-2">
+          <Button href="/report" shape="nav" variant="secondary" size="md">
+            View my report
+          </Button>
+          <button
+            type="button"
+            data-clear-session
+            class="text-body-sm text-mute underline decoration-hairline-strong underline-offset-2 transition-colors duration-150 ease-out hover:text-error"
+          >
+            Clear the log on this device
+          </button>
+        </div>
+      </Card>
+    </aside>
+  </div>
+
+  <FillSurface slot="surface" fills={fills} startIndex={0} />
+</TestPageLayout>
+
+<script>
+  import { mountFillRunner } from "../../lib/fillRunner";
+  import { clearSession, loadSession } from "../../lib/defects";
+
+  const cells = document.querySelectorAll<HTMLElement>("[data-progress-cell]");
+  const progressText = document.querySelector<HTMLElement>(
+    "[data-progress-text]",
+  );
+  const summary = document.querySelector<HTMLElement>("[data-run-summary]");
+
+  function paintProgress(): void {
+    const session = loadSession();
+    const seen = new Set(session.completedFills);
+
+    for (const cell of cells) {
+      const done = seen.has(cell.dataset.progressCell ?? "");
+      cell.classList.toggle("opacity-30", !done);
+      cell.classList.toggle("opacity-100", done);
+    }
+
+    if (progressText) {
+      const n = seen.size;
+      progressText.textContent =
+        n === 0
+          ? "Not started."
+          : `${n} of ${cells.length} fills viewed · ${session.defects.length} defect${
+              session.defects.length === 1 ? "" : "s"
+            } marked.`;
+    }
+
+    if (summary) {
+      const n = session.defects.length;
+      if (seen.size === 0) {
+        summary.hidden = true;
+      } else {
+        summary.hidden = false;
+        summary.textContent =
+          n === 0
+            ? `You have viewed ${seen.size} of ${cells.length} fills and marked nothing. If you got all the way through, that is a clean panel.`
+            : `${n} defect${n === 1 ? "" : "s"} marked so far. Open your report for a fault class and a map.`;
+      }
+    }
+  }
+
+  mountFillRunner({ trackProgress: true, onAdvance: paintProgress });
+  paintProgress();
+
+  document
+    .querySelector<HTMLButtonElement>("[data-clear-session]")
+    ?.addEventListener("click", () => {
+      // Destructive and unrecoverable — there is no server copy to restore.
+      if (!window.confirm("Delete every marked defect on this device?")) return;
+      clearSession();
+      paintProgress();
+    });
+</script>

@@ -1,0 +1,475 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   Dead Pixel Test — design tokens
+   Derived from DESIGN.md (Vercel design language, alpha).
+
+   Two conventions differ deliberately from DESIGN.md's raw px values:
+     · font-size / spacing use rem so browser zoom and user font-size settings
+       work. At the default 16px root these resolve to the exact px in the doc.
+     · letter-spacing uses em rather than px so the tracking ratio survives
+       responsive size changes. -2.4px at 48px === -0.05em.
+   ────────────────────────────────────────────────────────────────────────── */
+
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "tailwindcss";
+
+@theme {
+  /* ── Type families ─────────────────────────────────────────────────────
+     Geist is the brand's own face (OFL, via Fontsource). DESIGN.md lists
+     Inter / JetBrains Mono as substitutes; kept as fallbacks. */
+  --font-sans: "Geist Variable", Inter, system-ui, -apple-system, sans-serif;
+  --font-mono: "Geist Mono Variable", "JetBrains Mono", ui-monospace,
+    SFMono-Regular, Menlo, Monaco, monospace;
+
+  /* ── Type scale ────────────────────────────────────────────────────────
+     Aggressive negative tracking on display sizes is brand-critical —
+     DESIGN.md: "Reverting to default tracking breaks the brand." It is baked
+     into each step so it cannot be forgotten at the call site.
+     font-weight is intentionally NOT baked in, so `font-medium` etc. compose
+     without cascade ambiguity. Display copy is weight 600 — never 700+. */
+  --text-display-xl: 3rem; /* 48px */
+  --text-display-xl--line-height: 1; /* 48px */
+  --text-display-xl--letter-spacing: -0.05em; /* -2.4px */
+
+  --text-display-lg: 2rem; /* 32px */
+  --text-display-lg--line-height: 1.25; /* 40px */
+  --text-display-lg--letter-spacing: -0.04em; /* -1.28px */
+
+  --text-display-md: 1.5rem; /* 24px */
+  --text-display-md--line-height: 1.3333; /* 32px */
+  --text-display-md--letter-spacing: -0.04em; /* -0.96px */
+
+  --text-display-sm: 1.25rem; /* 20px */
+  --text-display-sm--line-height: 1.4; /* 28px */
+  --text-display-sm--letter-spacing: -0.03em; /* -0.6px */
+
+  --text-body-lg: 1.125rem; /* 18px */
+  --text-body-lg--line-height: 1.5556; /* 28px */
+  --text-body-lg--letter-spacing: 0em;
+
+  --text-body-md: 1rem; /* 16px */
+  --text-body-md--line-height: 1.5; /* 24px */
+  --text-body-md--letter-spacing: 0em;
+
+  --text-body-sm: 0.875rem; /* 14px */
+  --text-body-sm--line-height: 1.4286; /* 20px */
+  --text-body-sm--letter-spacing: -0.02em; /* -0.28px */
+
+  --text-caption: 0.75rem; /* 12px */
+  --text-caption--line-height: 1.3333; /* 16px */
+  --text-caption--letter-spacing: 0em;
+
+  --text-code: 0.8125rem; /* 13px */
+  --text-code--line-height: 1.5385; /* 20px */
+  --text-code--letter-spacing: 0em;
+
+  /* ── Colour ────────────────────────────────────────────────────────────
+     Ink is the single conversion colour. Do not introduce a sixth accent —
+     the system is ink + gray + the three gradient pairs. */
+  --color-ink: #171717;
+  --color-on-primary: #ffffff;
+  --color-body: #4d4d4d;
+  --color-mute: #888888;
+  --color-hairline: #ebebeb;
+  --color-hairline-strong: #a1a1a1;
+  --color-canvas: #ffffff;
+  --color-canvas-soft: #fafafa;
+  --color-canvas-soft-2: #f5f5f5;
+
+  --color-link: #0070f3;
+  --color-link-deep: #0761d1;
+  --color-link-bg-soft: #d3e5ff;
+
+  --color-success: #0070f3;
+  --color-error: #ee0000;
+  --color-error-soft: #f7d4d6;
+  --color-error-deep: #c50000;
+  --color-warning: #f5a623;
+  --color-warning-soft: #ffefcf;
+  --color-warning-deep: #ab570a;
+
+  --color-violet: #7928ca;
+  --color-violet-soft: #d8ccf1;
+  --color-violet-deep: #4c2889;
+  --color-cyan: #50e3c2;
+  --color-cyan-soft: #aaffec;
+  --color-cyan-deep: #29bc9b;
+  --color-highlight-pink: #ff0080;
+  --color-highlight-magenta: #eb367f;
+
+  /* Brand gradient — three pairs. Treated as one object at hero scale only. */
+  --color-grad-develop-start: #007cf0;
+  --color-grad-develop-end: #00dfd8;
+  --color-grad-preview-start: #7928ca;
+  --color-grad-preview-end: #ff0080;
+  --color-grad-ship-start: #ff4d4d;
+  --color-grad-ship-end: #f9cb28;
+
+  /* ── Radius ────────────────────────────────────────────────────────────
+     Two CTA scales coexist but never on the same screen:
+     pill (100px) for marketing, sm (6px) for nav/in-app. */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill-sm: 64px;
+  --radius-pill: 100px;
+
+  /* ── Elevation ─────────────────────────────────────────────────────────
+     Stacked small offsets + an inset hairline ring. Never a single heavy
+     drop shadow — DESIGN.md is explicit about this. */
+  --shadow-e1: inset 0 0 0 1px #00000014;
+  --shadow-e2: 0 1px 1px #00000005, 0 2px 2px #0000000a,
+    inset 0 0 0 1px #00000014;
+  --shadow-e3: 0 2px 2px #0000000a, 0 8px 8px -8px #0000000a,
+    inset 0 0 0 1px #00000014;
+  --shadow-e4: 0 2px 2px #0000000a, 0 8px 16px -4px #0000000a,
+    inset 0 0 0 1px #00000014;
+  --shadow-e5: 0 1px 1px #00000005, 0 8px 16px -4px #0000000a,
+    0 24px 32px -8px #0000000f, inset 0 0 0 1px #00000014;
+
+  /* ── Layout ────────────────────────────────────────────────────────────
+     Breakpoints follow DESIGN.md's responsive table rather than Tailwind's
+     defaults: tablet 600, desktop 960, wide 1200, ultra-wide 1400. */
+  --breakpoint-sm: 600px;
+  --breakpoint-md: 960px;
+  --breakpoint-lg: 1200px;
+  --breakpoint-xl: 1400px;
+
+  --container-page: 87.5rem; /* 1400px — --ds-page-width */
+  --container-prose: 45rem; /* 720px — guide reading column */
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Base
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer base {
+  html {
+    color-scheme: light;
+    /* Kill the iOS tap flash; we draw our own active states. */
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    scroll-behavior: smooth;
+  }
+
+  /* Anchored headings clear the sticky nav (64px) plus breathing room. */
+  :target {
+    scroll-margin-top: 6rem;
+  }
+
+  body {
+    background-color: var(--color-canvas-soft);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-md);
+    line-height: var(--text-body-md--line-height);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  ::selection {
+    background-color: #171717;
+    color: #f2f2f2;
+  }
+
+  /* Headings never carry widows. Weight ceiling is 600. */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    text-wrap: balance;
+    font-weight: 600;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
+  /* Numeric readouts (resolution, Hz, defect counts) must not jitter. */
+  output,
+  [data-numeric] {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Visible focus on everything interactive. :focus-visible rather than
+     :focus so a mouse click doesn't leave a ring behind. */
+  :focus-visible {
+    outline: 2px solid var(--color-link);
+    outline-offset: 2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* Honour reduced motion globally. Enumerated properties only — never
+     `transition: all`. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Utilities
+   ────────────────────────────────────────────────────────────────────────── */
+
+@layer utilities {
+  /* Screen-reader-only, but focusable (skip link). */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    border-width: 0;
+  }
+
+  .sr-only-focusable:focus {
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 200;
+    padding: 0.5rem 0.875rem;
+    background-color: var(--color-ink);
+    color: var(--color-on-primary);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-body-sm);
+    text-decoration: none;
+  }
+
+  /* The brand mesh gradient. Hero scale ONLY — never miniaturised to an
+     icon, never reduced to a single stop. All three pairs present. */
+  .mesh-gradient {
+    background-image:
+      radial-gradient(
+        at 18% 22%,
+        var(--color-grad-develop-start) 0px,
+        transparent 55%
+      ),
+      radial-gradient(
+        at 72% 12%,
+        var(--color-grad-develop-end) 0px,
+        transparent 52%
+      ),
+      radial-gradient(
+        at 84% 58%,
+        var(--color-grad-preview-end) 0px,
+        transparent 50%
+      ),
+      radial-gradient(
+        at 34% 74%,
+        var(--color-grad-preview-start) 0px,
+        transparent 52%
+      ),
+      radial-gradient(
+        at 58% 88%,
+        var(--color-grad-ship-start) 0px,
+        transparent 48%
+      ),
+      radial-gradient(
+        at 8% 62%,
+        var(--color-grad-ship-end) 0px,
+        transparent 45%
+      );
+  }
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Diagnostic chrome
+   The fill layer and the HUD that floats over it.
+
+   These deliberately DO NOT use the design tokens. The HUD sits on top of a
+   surface under measurement, and it must look identical no matter what the
+   site's palette ever becomes — the user has to recognise instantly which
+   rectangles are our chrome and which are their screen. So: pure black panel,
+   pure white text, one grey ring. Hard-coded on purpose.
+
+   The panel is opaque, never translucent. A frosted-glass HUD would leave the
+   user unsure whether the pixels showing through were real.
+   ────────────────────────────────────────────────────────────────────────── */
+
+/* The colour field itself. Nothing may be layered over it except the HUD. */
+.dpt-fill {
+  position: absolute;
+  inset: 0;
+}
+
+.dpt-hud {
+  position: absolute;
+  bottom: max(1rem, env(safe-area-inset-bottom));
+  left: 50%;
+  translate: -50% 0;
+  z-index: 10;
+  display: flex;
+  max-width: calc(100vw - 2rem);
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.5rem;
+  border: 1px solid #404040;
+  border-radius: 12px;
+  background-color: #000;
+  color: #fff;
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  line-height: 1.4286;
+  cursor: default;
+}
+
+/* visibility rather than display so the transition works and, more
+   importantly, so hidden controls leave the tab order. */
+.dpt-hud[data-hidden] {
+  visibility: hidden;
+  opacity: 0;
+  transition:
+    visibility 150ms ease-out,
+    opacity 150ms ease-out;
+}
+
+.dpt-hud-group {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.dpt-hud-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  min-height: 2.25rem;
+  padding: 0 0.75rem;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background-color: #171717;
+  color: #fff;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 120ms ease-out,
+    border-color 120ms ease-out;
+}
+
+.dpt-hud-btn:hover:not(:disabled) {
+  background-color: #2e2e2e;
+  border-color: #4d4d4d;
+}
+
+.dpt-hud-btn:disabled {
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* Toggles announce state via aria-pressed; this is the visual half of that. */
+.dpt-hud-btn[aria-pressed="true"] {
+  background-color: #fff;
+  border-color: #fff;
+  color: #000;
+}
+
+.dpt-hud-btn--icon {
+  min-width: 2.25rem;
+  padding: 0;
+  justify-content: center;
+}
+
+.dpt-hud-btn--danger[aria-pressed="true"] {
+  background-color: #ee0000;
+  border-color: #ee0000;
+  color: #fff;
+}
+
+/* Focus ring must clear both the black panel and any fill behind it. */
+.dpt-hud :focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.dpt-hud-label {
+  padding: 0 0.5rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.dpt-hud-label b {
+  font-weight: 500;
+}
+
+.dpt-hud-sub {
+  color: #a1a1a1;
+}
+
+.dpt-hud-kbd {
+  display: inline-block;
+  min-width: 1.25rem;
+  padding: 0.0625rem 0.25rem;
+  border: 1px solid #404040;
+  border-radius: 4px;
+  background-color: #000;
+  color: #a1a1a1;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  text-align: center;
+}
+
+.dpt-hud-note {
+  width: 100%;
+  padding: 0 0.5rem 0.125rem;
+  color: #f5a623;
+  font-size: 0.75rem;
+  text-align: center;
+}
+
+/* ── Defect markers ─────────────────────────────────────────────────────────
+   A ring, never a filled dot: the user must still be able to see the pixel
+   they just tagged. The white border plus black outer ring is legible against
+   every one of the twelve fills, which a single-colour marker would not be. */
+
+.dpt-marker {
+  position: absolute;
+  display: block;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  padding: 0;
+  border: 1.5px solid #fff;
+  border-radius: 50%;
+  background-color: transparent;
+  box-shadow: 0 0 0 1.5px #000;
+  cursor: pointer;
+}
+
+.dpt-marker::after {
+  content: attr(data-code);
+  position: absolute;
+  top: -7px;
+  right: -9px;
+  min-width: 14px;
+  padding: 0 3px;
+  border-radius: 4px;
+  background-color: #000;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 14px;
+  text-align: center;
+}
+
+.dpt-marker:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}

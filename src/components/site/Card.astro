@@ -1,0 +1,62 @@
+---
+/**
+ * Card — the canonical surface.
+ *
+ * Elevation uses DESIGN.md's stacked-shadow ladder (e1..e5): several small
+ * offsets plus an inset hairline ring, never a single heavy drop shadow.
+ * When `href` is set the whole card becomes a link, so Cmd/Ctrl-click and
+ * middle-click behave normally.
+ */
+interface Props {
+  href?: string | undefined;
+  elevation?: "e1" | "e2" | "e3" | "e4" | "e5";
+  surface?: "canvas" | "soft" | "ink";
+  padding?: "md" | "lg" | "xl";
+  radius?: "md" | "lg" | "xl";
+  class?: string | undefined;
+}
+
+const {
+  href,
+  elevation = "e3",
+  surface = "canvas",
+  padding = "lg",
+  radius = "md",
+  class: className,
+} = Astro.props;
+
+const Tag = href ? "a" : "div";
+
+const surfaces = {
+  canvas: "bg-canvas text-ink",
+  soft: "bg-canvas-soft text-ink",
+  ink: "bg-ink text-on-primary",
+};
+
+const elevations = {
+  e1: "shadow-e1",
+  e2: "shadow-e2",
+  e3: "shadow-e3",
+  e4: "shadow-e4",
+  e5: "shadow-e5",
+};
+
+const paddings = { md: "p-4", lg: "p-6", xl: "p-8" };
+const radii = { md: "rounded-md", lg: "rounded-lg", xl: "rounded-xl" };
+---
+
+<Tag
+  href={href}
+  class:list={[
+    "block",
+    surfaces[surface],
+    elevations[elevation],
+    paddings[padding],
+    radii[radius],
+    href &&
+      "transition-[box-shadow,background-color] duration-150 ease-out hover:shadow-e4",
+    className,
+  ]}
+>
+  <slot />
+</Tag>

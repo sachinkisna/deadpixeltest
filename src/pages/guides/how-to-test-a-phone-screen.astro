@@ -1,0 +1,152 @@
+---
+import GuideLayout from "../../layouts/GuideLayout.astro";
+import Card from "../../components/site/Card.astro";
+---
+
+<GuideLayout
+  title="How to Test a Phone Screen — OLED Burn-in, Tint and Dead Pixels"
+  description="Test a phone screen in the browser rather than with a video: compression hides real faults and invents fake ones. Covers the iOS Safari full-screen limitation, auto-brightness, OLED burn-in, PWM flicker and low-brightness tint."
+  heading="How to test a phone screen"
+  lede="A phone panel fails differently from a monitor, and the way most people test one — playing a dead pixel video — is actively worse than useless. Here is what works and what a browser genuinely cannot do."
+  updated="2026-08-27"
+  slug="how-to-test-a-phone-screen"
+>
+  <Card surface="soft" elevation="e1" padding="lg">
+    <p class="text-body-sm font-medium text-ink">In short</p>
+    <p class="mt-2 text-body-sm text-body">
+      Use flat CSS colour fills, never a video &mdash; compression both hides
+      real single-pixel faults and manufactures fake ones. Turn off
+      auto-brightness and True Tone first. On iPhone, add this site to the Home
+      Screen to get a genuinely full-screen fill. Then run the
+      <a href="/test/sequence">guided test</a>, and check
+      <a href="/test/grey-50">mid grey</a> for OLED burn-in.
+    </p>
+  </Card>
+
+  <h2>Why a video test is worse than no test</h2>
+  <p>
+    Dead pixel test videos are the default advice and they are wrong in both
+    directions. Lossy video compression divides the frame into blocks and throws
+    away detail inside each one, so a single faulty pixel gets averaged into its
+    neighbours and disappears &mdash; the exact fault you are looking for is the
+    first thing the codec discards. At the same time, compression <em>adds</em>
+    artefacts: blocking on flat fields and mosquito noise shimmering around
+    high-contrast edges, both of which look like panel faults and are not.
+  </p>
+  <p>
+    A browser painting a flat CSS colour has no codec in the path. The value
+    reaches the panel exactly as specified, every pixel identical, so anything you
+    see is the screen. That is the whole reason this site is built the way it is.
+  </p>
+
+  <h2>The iPhone Safari limitation, stated plainly</h2>
+  <p>
+    iOS Safari only exposes the Fullscreen API for <code>&lt;video&gt;</code>
+    elements. A colour fill on a web page therefore <strong>cannot</strong> truly
+    cover the screen in Safari on iPhone, and any site claiming otherwise is
+    describing something else. Three workarounds, in order of how much they
+    actually help:
+  </p>
+  <ul>
+    <li>
+      <strong>Add to Home Screen &mdash; this genuinely works.</strong> Launched
+      from the Home Screen the site opens in standalone mode with no browser
+      chrome at all, so the fill covers everything but the status bar area. This
+      is the only option that gets you close to a real full-screen fill.
+    </li>
+    <li>
+      <strong>Scroll down so the address bar collapses.</strong> Helps, but only
+      gives you more of a fill, not all of it &mdash; the toolbar shrinks rather
+      than vanishing.
+    </li>
+    <li>
+      <strong>Rotate to landscape.</strong> Safari hides more chrome in landscape
+      on smaller iPhones, so it is worth doing, but again this is more fill rather
+      than a full one.
+    </li>
+  </ul>
+  <p>
+    On Android, Chrome grants the Fullscreen API to any element, so the fill
+    covers the screen properly with no workaround needed.
+  </p>
+
+  <h2>Switch off everything adaptive first</h2>
+  <p>
+    Auto-brightness, True Tone, Night Shift and any adaptive colour or reading
+    mode all have to be off before you judge colour or uniformity. These features
+    actively shift white point and luminance <em>while you are looking</em>, which
+    means a tint you think you have found may be the phone reacting to your room,
+    and a uniformity difference between two halves of a slow pan may be the
+    backlight ramping. Set brightness manually, somewhere in the middle.
+  </p>
+
+  <h2>OLED faults, which are the ones you will actually find</h2>
+  <p>
+    Most modern phones are OLED, and OLED fails differently from LCD. Classic
+    stuck and dead pixels are rare on a new OLED panel; these are what turn up
+    instead.
+  </p>
+  <p>
+    <strong>Burn-in and image retention.</strong> Load
+    <a href="/test/grey-50">mid grey</a> and look for a ghost of the status bar
+    across the top, or of the keyboard across the lower third. A faint ghost that
+    fades within a minute or two is temporary image retention and is normal
+    behaviour, not a defect. A ghost that is still there after the screen has been
+    showing other content for a while is permanent burn-in.
+  </p>
+  <p>
+    <strong>PWM flicker.</strong> Many OLED phones dim by pulse-width modulation
+    &mdash; switching the panel on and off rapidly rather than reducing its
+    output &mdash; and some people get headaches or eye strain from it at low
+    brightness. A browser cannot measure this: the flicker happens in the
+    panel&rsquo;s driver, below anything JavaScript can observe. The standard
+    detection trick is to point a second phone&rsquo;s camera at the screen in
+    slow-motion mode at low brightness and look for rolling dark bands. Be clear
+    about what that is: a yes-or-no indication that PWM is present, not a
+    measurement of its frequency or depth.
+  </p>
+  <p>
+    <strong>Pink or green tint at low brightness.</strong> Drop brightness to its
+    minimum in a dark room and look at a dark grey field. Many OLED panels shift
+    towards pink or green at the bottom of their range, and pronounced,
+    unevenly-distributed tint is a known panel fault on some production runs
+    &mdash; worth photographing.
+  </p>
+  <p>
+    <strong>No backlight bleed, as a category.</strong> Each OLED pixel emits its
+    own light, so there is no backlight to leak. If you are looking for bleed on
+    an OLED phone you are looking for something that cannot exist. Black
+    uniformity is still worth checking, but you are checking for tint and for dead
+    emitters, not for edge leakage.
+  </p>
+
+  <h2>Which tests transfer to a phone</h2>
+  <p>
+    <strong>Fully:</strong> the colour fills and the
+    <a href="/test/sequence">guided run</a>, plus
+    <a href="/test/uniformity">uniformity</a> and the grey fields for burn-in.
+    These are exactly as valid on a handset as on a desktop panel.
+  </p>
+  <p>
+    <strong>Partly:</strong> <a href="/test/refresh-rate">refresh rate</a>. It
+    will confirm the rate the browser is receiving, which is useful on a variable
+    refresh rate phone, but a phone drops its rate aggressively to save power, so
+    a low reading may be correct behaviour rather than a fault.
+  </p>
+  <p>
+    <strong>Not really:</strong> viewing angle and response time. You hold a phone
+    and tilt it constantly, so off-axis performance is something you already know
+    about, and judging ghosting on a small handheld display you are moving
+    yourself tells you very little.
+  </p>
+
+  <h2>Cracked screen versus panel fault</h2>
+  <p>
+    If the symptoms started after a drop, this is physical damage rather than a
+    warranty defect, and describing it as a pixel fault will not help your case. A
+    black blotch that spreads over hours or days, coloured vertical or horizontal
+    lines, or a bright bloom radiating from one point are all impact damage to the
+    panel or its ribbon connector &mdash; even when the front glass is unbroken.
+    That is a repair or an insurance claim, not a pixel policy question.
+  </p>
+</GuideLayout>

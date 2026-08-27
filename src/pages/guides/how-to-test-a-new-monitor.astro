@@ -1,0 +1,136 @@
+---
+import GuideLayout from "../../layouts/GuideLayout.astro";
+import Card from "../../components/site/Card.astro";
+---
+
+<GuideLayout
+  title="How to Test a New Monitor — The First 30 Minutes"
+  description="A checklist for testing a new monitor while you can still return it: check the return window, warm the panel up, confirm resolution and refresh rate, then pixel faults, dark-room tests, panel quality and motion."
+  heading="How to test a new monitor"
+  lede="Do this before the return window closes, in this order. The sequence is not arbitrary — a few of these steps invalidate the others if you run them too early."
+  updated="2026-08-27"
+  slug="how-to-test-a-new-monitor"
+>
+  <Card surface="soft" elevation="e1" padding="lg">
+    <p class="text-body-sm font-medium text-ink">In short</p>
+    <p class="mt-2 text-body-sm text-body">
+      Note your return deadline first, let the panel warm up for 20&ndash;30
+      minutes, then confirm you are actually getting the resolution and refresh
+      rate you paid for. Only then look for faults: the
+      <a href="/test/sequence">twelve-fill guided run</a> for pixels, dark-room
+      tests last. Keep the box until you are sure.
+    </p>
+  </Card>
+
+  <h2>1. Check the return window before you check anything else</h2>
+  <p>
+    Find the retailer&rsquo;s returns period, work out the actual calendar date it
+    ends, and write it down. Everything below is academic if the window has
+    closed &mdash; a retailer return is nearly always faster and less contested
+    than a manufacturer warranty claim, so the deadline is the most valuable
+    piece of information you have. If the panel arrives while you are away, the
+    clock is usually already running.
+  </p>
+
+  <h2>2. Let it warm up for 20&ndash;30 minutes</h2>
+  <p>
+    Backlight output and colour drift as the panel reaches thermal equilibrium.
+    Uniformity judged in the first five minutes is not the uniformity you will
+    live with, and people return panels over differences that settle out. Leave
+    it on a mid-grey field and go and do something else.
+  </p>
+
+  <h2>3. Confirm the resolution and refresh rate you paid for</h2>
+  <p>
+    This is the single most common &ldquo;the monitor is broken&rdquo; that
+    isn&rsquo;t. A cable that cannot carry the bandwidth, a port that negotiates
+    down, or an operating system that quietly defaults to 60&nbsp;Hz will all make
+    a good panel look bad. Check
+    <a href="/test/resolution">resolution and scaling</a> and
+    <a href="/test/refresh-rate">refresh rate</a> before you conclude anything
+    about the hardware. If the numbers are wrong, fix the signal chain and start
+    again.
+  </p>
+
+  <h2>4. Set brightness to what you will actually use</h2>
+  <p>
+    Not maximum. Faults look different at 400 nits than at the 120 you will sit
+    at all day, and judging bleed or uniformity at full brightness will show you
+    problems you would never otherwise notice. Set it where you intend to work.
+  </p>
+
+  <h2>5. Pixel faults</h2>
+  <p>
+    Run the <a href="/test/sequence">guided pixel test</a>: twelve full-screen
+    fills in the order that makes faults easiest to see, with a tap to log each
+    one. The secondaries &mdash; cyan, magenta, yellow &mdash; matter here,
+    because each omits one channel and exposes a sub-pixel fault the primaries
+    hide. If you find something, read
+    <a href="/guides/dead-vs-stuck-pixel">dead versus stuck</a> to classify it
+    correctly before you describe it to anyone.
+  </p>
+
+  <h2>6. Dark-room tests</h2>
+  <p>
+    These need the lights off, which is why they come late rather than first:
+    <a href="/test/backlight-bleed">backlight bleed and IPS glow</a> and
+    <a href="/test/uniformity">backlight uniformity</a>. Sit at your normal
+    viewing distance, not six inches from the glass.
+  </p>
+
+  <h2>7. Panel quality</h2>
+  <p>
+    <a href="/test/banding">Gradient banding</a>,
+    <a href="/test/contrast">contrast and black level</a>,
+    <a href="/test/inversion">pixel inversion</a>,
+    <a href="/test/sharpness">sharpness and text clarity</a> and
+    <a href="/test/viewing-angle">viewing angle</a>. Sharpness is worth
+    particular attention: moir&eacute; or ringing on a fine grid usually means a
+    sharpness filter is switched on in the monitor&rsquo;s own menu, not that the
+    panel is faulty.
+  </p>
+
+  <h2>8. Motion</h2>
+  <p>
+    Run <a href="/test/response-time">response time and ghosting</a> and step the
+    overdrive setting through its range while you watch. Most monitors have one
+    setting that is visibly better than the default and one that overshoots into
+    bright inverse ghosting. A browser cannot measure grey-to-grey in
+    milliseconds &mdash; this is a perceptual comparison, and it is genuinely
+    useful for choosing the setting you keep.
+  </p>
+
+  <h2>9. If you found something, document it properly</h2>
+  <p>
+    Generate a <a href="/report">report</a> while the session is still logged.
+    Photograph the fault with the monitor&rsquo;s model and serial number visible
+    in the same frame &mdash; a support agent cannot dispute which unit a photo
+    is of when the label is in it. Keep the packaging until the return window
+    closes; some retailers will refuse or discount a return without it.
+  </p>
+
+  <h2>What is worth returning, and what is normal</h2>
+  <p>
+    Being honest with yourself here saves everyone time. <strong>Normal panel
+    behaviour:</strong> IPS glow at the corners when viewed off-axis, a small
+    amount of backlight bleed visible only on pure black in a dark room, and some
+    non-uniformity across a full grey field. Every IPS panel has all three to
+    some degree. Returning units until you find a perfect one is a long and
+    usually unsuccessful hobby.
+  </p>
+  <p>
+    <strong>Worth returning:</strong> a hard-edged bright dot on black, a stuck or
+    dead sub-pixel anywhere near the centre of the screen where you will look at
+    it every day, banding visible in ordinary content rather than only on a
+    synthetic ramp, a cluster of faults sitting close together, or bleed severe
+    enough to be obvious in normal room light. Dead pixels near the extreme edge
+    are a judgement call &mdash; many people stop seeing them within a week.
+  </p>
+  <p>
+    Either way, count and classify the faults by type before you make contact. If
+    a claim comes down to numbers, read
+    <a href="/guides/iso-pixel-fault-classes">ISO pixel fault classes</a> and
+    <a href="/guides/dead-pixel-warranty-policies">how to find the applicable
+    policy</a>. The full test list is at <a href="/tests">all tests</a>.
+  </p>
+</GuideLayout>

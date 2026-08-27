@@ -1,0 +1,831 @@
+---
+/**
+ * /report — the defect map and ISO fault class.
+ *
+ * The differentiator. Every free screen test shows you colours; almost none of
+ * them tell you what to do with what you found. This page takes the log from a
+ * guided run and produces a fault class, a map, and a plain-text summary that
+ * can go straight into a support ticket.
+ *
+ * Everything below the header is rendered client-side, because the session
+ * lives in localStorage and does not exist at build time. The server-rendered
+ * markup is therefore a skeleton: an empty state, a hidden report body, and a
+ * <noscript> explanation. Nothing here ever fetches.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Eyebrow from "../components/site/Eyebrow.astro";
+import Card from "../components/site/Card.astro";
+import Button from "../components/site/Button.astro";
+import { FAULT_CLASSES } from "../lib/iso";
+import { ISO_TYPE_NAME } from "../lib/report";
+---
+
+<SiteLayout
+  title="My Screen Report — ISO Pixel Fault Class & Defect Map"
+  description="Turn your logged screen faults into an ISO 9241-307 fault class, a defect map and a plain-text summary you can send to a retailer. Everything stays on your own device."
+  bleed
+>
+  <header class="border-b border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 pt-10 pb-12 md:px-6 md:pt-14">
+      <nav aria-label="Breadcrumb" class="mb-6">
+        <ol class="flex flex-wrap items-center gap-2 text-caption text-mute">
+          <li><a href="/" class="hover:text-ink">Home</a></li>
+          <li aria-hidden="true">/</li>
+          <li aria-current="page" class="text-body">My report</li>
+        </ol>
+      </nav>
+
+      <Eyebrow>Report</Eyebrow>
+      <h1 class="mt-3 max-w-3xl text-display-lg text-ink">
+        Your screen report
+      </h1>
+      <p class="mt-4 max-w-prose text-body-lg text-body">
+        Built from the faults you logged on this browser. It is graded against
+        the ISO pixel fault classes, and it is stored nowhere but this device.
+      </p>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-page px-4 py-12 md:px-6">
+    <noscript>
+      <div
+        class="mb-10 max-w-prose rounded-lg border border-warning bg-warning-soft p-5"
+      >
+        <p class="text-body-sm font-medium text-warning-deep">
+          This page needs JavaScript
+        </p>
+        <p class="mt-2 text-body-sm text-warning-deep">
+          Your report is stored in this browser rather than on a server, so
+          there is nothing for the server to render. Enabling JavaScript for
+          this site reads it back &mdash; still without sending anything
+          anywhere.
+        </p>
+      </div>
+    </noscript>
+
+    <!-- Shown until the script decides which state applies, so the page never
+         flashes an empty report at someone who has one. -->
+    <p data-report-loading class="text-body-md text-mute">
+      Reading your log&hellip;
+    </p>
+
+    <!-- ── No session yet ──────────────────────────────────────────────── -->
+    <div data-report-empty hidden class="max-w-prose">
+      <Card elevation="e2" padding="lg">
+        <h2 class="text-display-sm text-ink">Nothing logged yet</h2>
+        <p class="mt-3 text-body-md text-body">
+          Run the guided test and mark any faults you find. This page will then
+          count them by type, grade the panel, and give you something you can
+          send to a retailer.
+        </p>
+        <div class="mt-6 flex flex-col gap-3 sm:flex-row">
+          <Button href="/test/sequence" size="lg" shape="pill">
+            Start the guided test
+          </Button>
+          <Button href="/tests" size="lg" shape="pill" variant="secondary">
+            Browse all tests
+          </Button>
+        </div>
+      </Card>
+
+      <p class="mt-6 text-body-sm text-mute">
+        If you ran a test in a different browser, on a different device, or in a
+        private window, the log is not here. There is no account and nothing is
+        uploaded, so a log cannot follow you between browsers.
+      </p>
+    </div>
+
+    <!-- ── The report ──────────────────────────────────────────────────── -->
+    <div data-report-body hidden>
+      <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-14">
+        <div>
+          <!-- Headline verdict -->
+          <section aria-labelledby="verdict-h">
+            <Eyebrow as="h2">Verdict</Eyebrow>
+            <p
+              id="verdict-h"
+              data-verdict-headline
+              class="mt-2 text-display-md text-ink"
+            >
+            </p>
+            <p data-verdict-detail class="mt-3 max-w-prose text-body-md text-body">
+            </p>
+          </section>
+
+          <!-- Counts by fault type -->
+          <section class="mt-10" aria-labelledby="counts-h">
+            <h2 id="counts-h" class="text-display-sm text-ink">
+              Faults by type
+            </h2>
+            <dl class="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {
+                (
+                  [
+                    ["dead", "Dead", "Type 2"],
+                    ["hot", "Bright", "Type 1"],
+                    ["stuck", "Stuck sub-pixel", "Type 3"],
+                    ["unsure", "Unclassified", "Not graded"],
+                  ] as const
+                ).map(([key, label, iso]) => (
+                  <div class="rounded-md border border-hairline bg-canvas p-4">
+                    <dt class="text-caption text-mute">{label}</dt>
+                    <dd
+                      data-count={key}
+                      class="mt-1 font-mono text-display-sm tabular-nums text-ink"
+                    >
+                      0
+                    </dd>
+                    <p class="mt-1 text-caption text-mute">{iso}</p>
+                  </div>
+                ))
+              }
+            </dl>
+          </section>
+
+          <!-- The map -->
+          <section class="mt-10" aria-labelledby="map-h">
+            <h2 id="map-h" class="text-display-sm text-ink">Where they are</h2>
+            <p class="mt-2 max-w-prose text-body-sm text-body">
+              Drawn to your screen's aspect ratio. Positions come from where you
+              tapped, so treat them as roughly right rather than exact &mdash;
+              faults logged with the keyboard sit at the centre by design.
+            </p>
+            <div
+              data-map
+              role="img"
+              aria-label="Map of logged screen faults"
+              class="relative mt-5 w-full overflow-hidden rounded-md border border-hairline-strong bg-ink"
+              style="aspect-ratio: 16 / 9"
+            >
+              <!-- Thirds guides, so a user can say "top left third" out loud. -->
+              <div class="pointer-events-none absolute inset-0" aria-hidden="true">
+                <div class="absolute inset-y-0 left-1/3 w-px bg-white/12"></div>
+                <div class="absolute inset-y-0 left-2/3 w-px bg-white/12"></div>
+                <div class="absolute inset-x-0 top-1/3 h-px bg-white/12"></div>
+                <div class="absolute inset-x-0 top-2/3 h-px bg-white/12"></div>
+              </div>
+              <!-- Markers injected here. -->
+            </div>
+            <p data-map-caption class="mt-3 text-caption text-mute"></p>
+          </section>
+
+          <!-- Fault list -->
+          <section class="mt-10" aria-labelledby="list-h">
+            <h2 id="list-h" class="text-display-sm text-ink">Fault list</h2>
+            <div class="mt-4 overflow-x-auto">
+              <table class="w-full min-w-[34rem] border-collapse text-left">
+                <caption class="sr-only">
+                  Every logged fault, its type, position and the fill it was
+                  found on
+                </caption>
+                <thead>
+                  <tr class="border-b border-hairline">
+                    <th scope="col" class="py-2 pr-3 text-caption font-medium text-mute">#</th>
+                    <th scope="col" class="py-2 pr-3 text-caption font-medium text-mute">Type</th>
+                    <th scope="col" class="py-2 pr-3 text-caption font-medium text-mute">Where</th>
+                    <th scope="col" class="py-2 pr-3 text-caption font-medium text-mute">Found on</th>
+                    <th scope="col" class="py-2 text-caption font-medium text-mute">
+                      <span class="sr-only">Remove</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody data-fault-rows></tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Possible clusters -->
+          <section data-clusters-section hidden class="mt-10">
+            <h2 class="text-display-sm text-ink">Possible clusters</h2>
+            <div
+              class="mt-3 max-w-prose rounded-lg border border-warning bg-warning-soft p-5"
+            >
+              <p class="text-body-sm text-warning-deep">
+                Some faults were logged close together. ISO defines a cluster
+                inside a 5&times;5 pixel block, and the positions here are
+                tap-accurate at best &mdash; orders of magnitude coarser than
+                that. So this is a prompt to look again closely with the screen
+                magnified, not a cluster determination, and it does not affect
+                the grade above.
+              </p>
+              <ul data-cluster-list class="mt-3 flex flex-col gap-1"></ul>
+            </div>
+          </section>
+
+          <!-- ISO table -->
+          <section class="mt-10" aria-labelledby="iso-h">
+            <h2 id="iso-h" class="text-display-sm text-ink">
+              Against the ISO fault classes
+            </h2>
+            <p class="mt-2 max-w-prose text-body-sm text-body">
+              The standard sets its limits per million pixels, so the allowance
+              below is computed for your panel's own pixel count. The 2001
+              edition of ISO 13406-2 is withdrawn and superseded by ISO
+              9241-302, -303, -305 and -307:2008, but manufacturers still quote
+              the old class numbers, so both names are in use.
+            </p>
+            <div class="mt-5 overflow-x-auto">
+              <table class="w-full min-w-[36rem] border-collapse text-left">
+                <caption class="sr-only">
+                  Fault allowance per class for this panel, and whether it
+                  passes
+                </caption>
+                <thead>
+                  <tr class="border-b border-hairline">
+                    <th scope="col" class="py-2 pr-3 text-caption font-medium text-mute">Class</th>
+                    {
+                      ([1, 2, 3] as const).map((t) => (
+                        <th
+                          scope="col"
+                          class="py-2 pr-3 text-caption font-medium text-mute"
+                          title={ISO_TYPE_NAME[t]}
+                        >
+                          Type {t} allowed
+                        </th>
+                      ))
+                    }
+                    <th scope="col" class="py-2 text-caption font-medium text-mute">
+                      Your panel
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {
+                    FAULT_CLASSES.map((cls) => (
+                      <tr data-class-row={cls} class="border-b border-hairline">
+                        <th
+                          scope="row"
+                          class="py-2.5 pr-3 font-mono text-body-sm font-medium text-ink"
+                        >
+                          Class {cls}
+                        </th>
+                        <td
+                          data-allowed="type1"
+                          class="py-2.5 pr-3 font-mono text-body-sm tabular-nums text-body"
+                        >
+                          &mdash;
+                        </td>
+                        <td
+                          data-allowed="type2"
+                          class="py-2.5 pr-3 font-mono text-body-sm tabular-nums text-body"
+                        >
+                          &mdash;
+                        </td>
+                        <td
+                          data-allowed="type3"
+                          class="py-2.5 pr-3 font-mono text-body-sm tabular-nums text-body"
+                        >
+                          &mdash;
+                        </td>
+                        <td data-class-result class="py-2.5 text-body-sm"></td>
+                      </tr>
+                    ))
+                  }
+                </tbody>
+              </table>
+            </div>
+            <p data-typical-note class="mt-4 max-w-prose text-body-sm text-body">
+            </p>
+          </section>
+
+          <!-- What to do -->
+          <section class="mt-10 max-w-prose" aria-labelledby="next-h">
+            <h2 id="next-h" class="text-display-sm text-ink">What to do next</h2>
+            <ol class="mt-4 flex flex-col gap-4 text-body-md text-body">
+              <li>
+                <strong class="font-medium text-ink">
+                  Check whether it is stuck rather than dead.
+                </strong>
+                A stuck sub-pixel can sometimes be freed. Run the
+                <a
+                  href="/fixer"
+                  class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+                  >stuck pixel fixer</a
+                > before you start a return, and re-check afterwards.
+              </li>
+              <li>
+                <strong class="font-medium text-ink">Note your return window.</strong>
+                A retailer return inside the return window is almost always
+                faster and less contested than a warranty claim. Check the date
+                before anything else.
+              </li>
+              <li>
+                <strong class="font-medium text-ink">
+                  Find the policy that actually applies.
+                </strong>
+                Thresholds differ by product line, region and purchase channel,
+                and they change &mdash; so this site does not publish per-brand
+                numbers. The
+                <a
+                  href="/guides/dead-pixel-warranty-policies"
+                  class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+                  >warranty guide</a
+                > shows you how to find yours authoritatively.
+              </li>
+              <li>
+                <strong class="font-medium text-ink">Capture the evidence.</strong>
+                Copy the summary below, and photograph the fault with the
+                model and serial number visible in the same frame.
+              </li>
+            </ol>
+          </section>
+
+          <!-- Honest limits -->
+          <section class="mt-10 max-w-prose" aria-labelledby="limits-h">
+            <h2 id="limits-h" class="text-display-sm text-ink">
+              What this report is not
+            </h2>
+            <ul class="mt-4 flex flex-col gap-3 text-body-md text-body">
+              <li>
+                It is not a measurement. Every fault in it was identified by eye,
+                by you, and classified by you. A browser cannot see your panel.
+              </li>
+              <li>
+                It is not a guarantee. The ISO classes are guidelines rather than
+                mandates, manufacturers interpret them inconsistently, and some
+                ignore them. A computed class is evidence for a claim; the
+                seller's own policy is what governs it.
+              </li>
+              <li>
+                The physical pixel count is derived from what the browser
+                reports, so it matches your panel only when the operating system
+                is outputting at native resolution. Check that on
+                <a
+                  href="/test/resolution"
+                  class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+                  >the resolution page</a
+                >.
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <!-- ── Sidebar ────────────────────────────────────────────────── -->
+        <aside class="lg:pt-1">
+          <Card elevation="e2" padding="lg">
+            <Eyebrow as="h2">Display</Eyebrow>
+            <dl data-screen-info class="mt-4 flex flex-col gap-2.5"></dl>
+            <p class="mt-4 text-caption text-mute">
+              Recorded when you first ran a test on this browser.
+            </p>
+          </Card>
+
+          <Card elevation="e2" padding="lg" class="mt-4">
+            <Eyebrow as="h2">Take it with you</Eyebrow>
+            <p class="mt-3 text-body-sm text-body">
+              A plain-text summary, ready to paste into a support ticket. Text
+              rather than a PDF, because a warranty conversation happens in
+              prose and text survives any form.
+            </p>
+            <div class="mt-4 flex flex-col gap-2">
+              <Button type="button" shape="nav" size="md" data-copy-report>
+                Copy summary
+              </Button>
+              <Button
+                type="button"
+                shape="nav"
+                size="md"
+                variant="secondary"
+                data-print-report
+              >
+                Print or save as PDF
+              </Button>
+              <button
+                type="button"
+                data-toggle-text
+                aria-expanded="false"
+                class="text-body-sm text-link underline decoration-link-bg-soft underline-offset-2 transition-colors duration-150 ease-out hover:decoration-link"
+              >
+                Show the text
+              </button>
+            </div>
+            <p
+              data-copy-status
+              role="status"
+              aria-live="polite"
+              class="mt-2 text-caption text-mute"
+            >
+            </p>
+          </Card>
+
+          <Card elevation="e2" padding="lg" class="mt-4">
+            <Eyebrow as="h2">This device only</Eyebrow>
+            <p class="mt-3 text-body-sm text-body">
+              The log lives in this browser's local storage. Nothing was ever
+              uploaded, so there is no copy to restore &mdash; clearing it is
+              permanent.
+            </p>
+            <div class="mt-4 flex flex-col gap-2">
+              <Button href="/test/sequence" shape="nav" size="md" variant="secondary">
+                Continue testing
+              </Button>
+              <button
+                type="button"
+                data-clear-session
+                class="text-body-sm text-mute underline decoration-hairline-strong underline-offset-2 transition-colors duration-150 ease-out hover:text-error"
+              >
+                Delete this log
+              </button>
+            </div>
+          </Card>
+        </aside>
+      </div>
+
+      <!-- The raw text, revealed on demand and used for printing. -->
+      <section data-text-section hidden class="mt-12">
+        <h2 class="text-display-sm text-ink">Text summary</h2>
+        <pre
+          data-report-text
+          class="mt-4 overflow-x-auto rounded-md border border-hairline bg-canvas-soft-2 p-5 font-mono text-code text-ink"></pre>
+      </section>
+    </div>
+  </div>
+</SiteLayout>
+
+<style>
+  /* Report markers. Solid fills rather than the hollow rings used on a live
+     test surface: nothing is under measurement here, so legibility wins. */
+  .rep-marker {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: 1.375rem;
+    height: 1.375rem;
+    margin-left: -0.6875rem;
+    margin-top: -0.6875rem;
+    border-radius: 9999px;
+    border: 2px solid #fff;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1;
+    color: #fff;
+    box-shadow: 0 0 0 1px #00000080;
+  }
+
+  .rep-marker[data-type="dead"] {
+    background-color: #171717;
+  }
+  .rep-marker[data-type="hot"] {
+    background-color: #ee0000;
+  }
+  .rep-marker[data-type="stuck"] {
+    background-color: #7928ca;
+  }
+  .rep-marker[data-type="unsure"] {
+    background-color: #4d4d4d;
+  }
+
+  /* Printing is a first-class path here: a printed report is what gets handed
+     across a counter. Drop everything that is not the report itself. */
+  @media print {
+    :global(header[data-site-nav]),
+    :global(footer),
+    :global(nav[aria-label="Breadcrumb"]),
+    [data-map],
+    [data-report-empty],
+    aside {
+      display: none !important;
+    }
+
+    [data-text-section] {
+      display: block !important;
+      margin-top: 0;
+    }
+
+    [data-report-text] {
+      border: 0;
+      background: transparent;
+      padding: 0;
+      white-space: pre-wrap;
+    }
+  }
+</style>
+
+<script>
+  import {
+    buildReport,
+    describePosition,
+    reportAsText,
+    type ReportModel,
+  } from "../lib/report";
+  import { clearSession, loadSession, removeDefect } from "../lib/defects";
+  import { DEFECT_LABEL, DEFECT_SHORT } from "../lib/defects";
+  import { getFill } from "../lib/palette";
+
+  const loading = document.querySelector<HTMLElement>("[data-report-loading]");
+  const empty = document.querySelector<HTMLElement>("[data-report-empty]");
+  const body = document.querySelector<HTMLElement>("[data-report-body]");
+  if (!loading || !empty || !body) throw new Error("Report skeleton missing.");
+
+  const map = body.querySelector<HTMLElement>("[data-map]");
+  const rowsEl = body.querySelector<HTMLElement>("[data-fault-rows]");
+  const textEl = body.querySelector<HTMLElement>("[data-report-text]");
+
+  /** Latest model, so the delete-a-fault path can re-render without a reload. */
+  let model: ReportModel = buildReport();
+
+  const setText = (el: Element | null, value: string): void => {
+    if (el) el.textContent = value;
+  };
+
+  function renderVerdict(): void {
+    const { evaluation, graded, counts, typicalClass } = model;
+    const headline = body!.querySelector("[data-verdict-headline]");
+    const detail = body!.querySelector("[data-verdict-detail]");
+
+    if (graded === 0 && counts.unsure > 0) {
+      setText(headline, "Not gradeable yet");
+      setText(
+        detail,
+        `You logged ${counts.unsure} fault${counts.unsure === 1 ? "" : "s"} but did not classify ${
+          counts.unsure === 1 ? "it" : "them"
+        }. Go back to the fills and set each one to dead, bright or stuck — the ISO classes are defined per fault type, so an unclassified fault cannot be graded.`,
+      );
+      return;
+    }
+
+    if (evaluation.bestClass === null) {
+      setText(headline, "Fails every fault class");
+      setText(
+        detail,
+        "This many faults exceeds even Class IV, the most permissive class in the standard. That is a strong basis for a return or a claim.",
+      );
+      return;
+    }
+
+    setText(headline, `Class ${evaluation.bestClass}`);
+    const cmp =
+      evaluation.bestClass === typicalClass
+        ? `That is the class most consumer panels are sold against, so a claim on pixel count alone is unlikely to succeed — though a fault in the middle of the screen is sometimes treated separately.`
+        : evaluation.bestClass === "I"
+          ? `Class I is the strictest class: it allows no pixel faults at all. Nothing you logged is a graded pixel fault.`
+          : `Most consumer panels are sold against Class ${typicalClass}. Yours only reaches Class ${evaluation.bestClass}, which is worse — that is worth raising with the seller.`;
+    setText(
+      detail,
+      `This is the strictest class your panel satisfies, on ${evaluation.megapixels.toFixed(2)} megapixels. ${cmp}`,
+    );
+  }
+
+  function renderCounts(): void {
+    for (const [key, n] of Object.entries(model.counts)) {
+      setText(body!.querySelector(`[data-count="${key}"]`), String(n));
+    }
+  }
+
+  function renderMap(): void {
+    if (!map) return;
+
+    const s = model.session.screen;
+    if (s.deviceWidth > 0 && s.deviceHeight > 0) {
+      map.style.aspectRatio = `${s.deviceWidth} / ${s.deviceHeight}`;
+    }
+
+    for (const old of map.querySelectorAll(".rep-marker")) old.remove();
+
+    model.session.defects.forEach((d, i) => {
+      const dot = document.createElement("span");
+      dot.className = "rep-marker";
+      dot.dataset.type = d.type;
+      dot.style.left = `${d.x * 100}%`;
+      dot.style.top = `${d.y * 100}%`;
+      dot.textContent = String(i + 1);
+      dot.title = `${i + 1}. ${DEFECT_LABEL[d.type]}`;
+      map.append(dot);
+    });
+
+    const caption = body!.querySelector("[data-map-caption]");
+    setText(
+      caption,
+      `${model.total} fault${model.total === 1 ? "" : "s"} plotted · ` +
+        `${s.deviceWidth} × ${s.deviceHeight} physical pixels (derived)`,
+    );
+  }
+
+  function renderRows(): void {
+    if (!rowsEl) return;
+    rowsEl.textContent = "";
+
+    model.session.defects.forEach((d, i) => {
+      const fill = getFill(d.fillSlug);
+      const tr = document.createElement("tr");
+      tr.className = "border-b border-hairline";
+
+      const cells: Array<{ html?: string; text?: string; cls: string }> = [
+        {
+          text: String(i + 1),
+          cls: "py-2.5 pr-3 font-mono text-body-sm tabular-nums text-mute",
+        },
+        { text: DEFECT_LABEL[d.type], cls: "py-2.5 pr-3 text-body-sm text-ink" },
+        {
+          text: describePosition(d),
+          cls: "py-2.5 pr-3 text-body-sm text-body",
+        },
+        {
+          text: fill ? fill.name : "—",
+          cls: "py-2.5 pr-3 text-body-sm text-body",
+        },
+      ];
+
+      for (const c of cells) {
+        const td = document.createElement("td");
+        td.className = c.cls;
+        td.textContent = c.text ?? "";
+        tr.append(td);
+      }
+
+      const actions = document.createElement("td");
+      actions.className = "py-2.5 text-right";
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className =
+        "text-caption text-mute underline decoration-hairline-strong underline-offset-2 transition-colors duration-150 ease-out hover:text-error";
+      del.textContent = "Remove";
+      del.setAttribute(
+        "aria-label",
+        `Remove fault ${i + 1}, ${DEFECT_SHORT[d.type]}`,
+      );
+      del.addEventListener("click", () => {
+        const session = loadSession();
+        removeDefect(session, d.id);
+        render();
+      });
+      actions.append(del);
+      tr.append(actions);
+
+      rowsEl.append(tr);
+    });
+  }
+
+  function renderClusters(): void {
+    const section = body!.querySelector<HTMLElement>("[data-clusters-section]");
+    const list = body!.querySelector<HTMLElement>("[data-cluster-list]");
+    if (!section || !list) return;
+
+    if (model.clusters.length === 0) {
+      section.hidden = true;
+      return;
+    }
+
+    section.hidden = false;
+    list.textContent = "";
+    for (const group of model.clusters) {
+      const li = document.createElement("li");
+      li.className = "text-body-sm text-warning-deep";
+      li.textContent = `Faults ${group.join(", ")} were logged within about 2% of the screen's shorter edge of each other.`;
+      list.append(li);
+    }
+  }
+
+  function renderIsoTable(): void {
+    for (const row of model.rows) {
+      const tr = body!.querySelector<HTMLElement>(
+        `[data-class-row="${row.faultClass}"]`,
+      );
+      if (!tr) continue;
+
+      setText(tr.querySelector('[data-allowed="type1"]'), String(row.allowed.type1));
+      setText(tr.querySelector('[data-allowed="type2"]'), String(row.allowed.type2));
+      setText(tr.querySelector('[data-allowed="type3"]'), String(row.allowed.type3));
+
+      const result = tr.querySelector<HTMLElement>("[data-class-result]");
+      if (!result) continue;
+      result.textContent = "";
+      const badge = document.createElement("span");
+      badge.className =
+        "inline-flex items-center rounded-full px-2 py-0.5 text-caption font-medium " +
+        (row.passes
+          ? "bg-cyan-soft text-cyan-deep"
+          : "bg-error-soft text-error-deep");
+      badge.textContent = row.passes ? "Passes" : "Fails";
+      result.append(badge);
+
+      if (!row.passes && row.exceeded.length > 0) {
+        const why = document.createElement("span");
+        why.className = "ml-2 text-caption text-mute";
+        why.textContent = row.exceeded.join("; ");
+        result.append(why);
+      }
+    }
+
+    setText(
+      body!.querySelector("[data-typical-note]"),
+      `Class ${model.typicalClass} is the class most consumer panels are sold against, per the standard's own commentary. That is context for reading the table, not a promise about any particular product — always check what your own seller committed to.`,
+    );
+  }
+
+  function renderScreenInfo(): void {
+    const dl = body!.querySelector<HTMLElement>("[data-screen-info]");
+    if (!dl) return;
+    const s = model.session.screen;
+
+    const rows: ReadonlyArray<readonly [string, string]> = [
+      ["Reported size", `${s.cssWidth} × ${s.cssHeight} CSS px`],
+      ["Pixel ratio", String(s.devicePixelRatio)],
+      ["Physical pixels", `${s.deviceWidth} × ${s.deviceHeight}`],
+      ["Megapixels", model.evaluation.megapixels.toFixed(2)],
+      ["Colour depth", `${s.colorDepth}-bit`],
+      [
+        "Fills viewed",
+        `${model.viewedFills} of 12`,
+      ],
+    ];
+
+    dl.textContent = "";
+    for (const [label, value] of rows) {
+      const wrap = document.createElement("div");
+      wrap.className = "flex items-baseline justify-between gap-3";
+      const dt = document.createElement("dt");
+      dt.className = "text-body-sm text-body";
+      dt.textContent = label;
+      const dd = document.createElement("dd");
+      dd.className = "font-mono text-body-sm tabular-nums text-ink";
+      dd.textContent = value;
+      wrap.append(dt, dd);
+      dl.append(wrap);
+    }
+  }
+
+  function render(): void {
+    model = buildReport();
+    loading!.hidden = true;
+
+    if (!model.hasDefects && model.viewedFills === 0) {
+      empty!.hidden = false;
+      body!.hidden = true;
+      return;
+    }
+
+    empty!.hidden = true;
+    body!.hidden = false;
+
+    renderVerdict();
+    renderCounts();
+    renderMap();
+    renderRows();
+    renderClusters();
+    renderIsoTable();
+    renderScreenInfo();
+    if (textEl) textEl.textContent = reportAsText(model);
+  }
+
+  render();
+
+  /* ── Actions ──────────────────────────────────────────────────────────── */
+
+  const status = body.querySelector<HTMLElement>("[data-copy-status]");
+
+  body
+    .querySelector<HTMLButtonElement>("[data-copy-report]")
+    ?.addEventListener("click", async () => {
+      const text = reportAsText(model);
+      try {
+        await navigator.clipboard.writeText(text);
+        setText(status, "Copied to the clipboard.");
+      } catch {
+        // Clipboard access can be refused outright, and there is no way to
+        // recover it — so reveal the text instead of failing silently.
+        revealText(true);
+        setText(
+          status,
+          "The browser refused clipboard access. The text is shown below — select and copy it.",
+        );
+      }
+    });
+
+  body
+    .querySelector<HTMLButtonElement>("[data-print-report]")
+    ?.addEventListener("click", () => {
+      revealText(true);
+      window.print();
+    });
+
+  const toggle = body.querySelector<HTMLButtonElement>("[data-toggle-text]");
+  const textSection = body.querySelector<HTMLElement>("[data-text-section]");
+
+  function revealText(open: boolean): void {
+    if (textSection) textSection.hidden = !open;
+    if (toggle) {
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.textContent = open ? "Hide the text" : "Show the text";
+    }
+  }
+
+  toggle?.addEventListener("click", () => {
+    revealText(Boolean(textSection?.hidden));
+  });
+
+  body
+    .querySelector<HTMLButtonElement>("[data-clear-session]")
+    ?.addEventListener("click", () => {
+      // Unrecoverable: there is no server copy, by design.
+      if (
+        !window.confirm(
+          "Delete every logged fault on this device? There is no backup.",
+        )
+      ) {
+        return;
+      }
+      clearSession();
+      render();
+    });
+</script>

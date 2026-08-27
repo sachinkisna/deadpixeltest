@@ -1,0 +1,490 @@
+---
+/**
+ * Response time & ghosting.
+ *
+ * A perceptual test only. There is no millisecond figure anywhere on this page,
+ * because a browser cannot produce an honest one — see lib/motionRunner.ts. The
+ * deliverable is a procedure: run a pattern, step the monitor's overdrive setting,
+ * pick the highest setting with no visible bright halo.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import TestSurface from "../../components/test/TestSurface.astro";
+import TestHud from "../../components/test/TestHud.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Card from "../../components/site/Card.astro";
+import { getTest } from "../../lib/tests";
+
+const test = getTest("response-time");
+if (!test) throw new Error("Missing registry entry: response-time");
+
+const PATTERNS = [
+  { id: "ufo", label: "UFO row" },
+  { id: "edge", label: "Edge sweep" },
+  { id: "inverse", label: "Inverse ghost" },
+  { id: "text", label: "Text scroll" },
+] as const;
+
+const linkClass =
+  "text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link";
+---
+
+<TestPageLayout
+  title="Response Time & Ghosting Test — Judge Smearing and Overdrive Overshoot"
+  description="Moving high-contrast objects at controlled speeds so you can see smearing and inverse ghosting by eye, and tune your monitor's overdrive setting. No invented millisecond figures — a browser cannot measure grey-to-grey."
+  heading="Response time &amp; ghosting"
+  lede={test.description}
+  category="motion"
+  slug="response-time"
+  limitation={test.limitation}
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel
+        label="Launch motion test"
+        prerequisites={[
+          "Have your monitor's OSD menu accessible — the overdrive setting is what you will be changing.",
+          "Sit at your normal viewing distance. Perceived blur depends on it, so a close-up look will mislead you.",
+          "Close other applications. A dropped frame looks a lot like a smear.",
+        ]}
+      />
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Definitions</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">Three things people conflate</h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            <strong class="font-medium text-ink">Response time</strong> is how long a
+            pixel takes to change from one grey level to another &mdash;
+            grey-to-grey, or GtG. It is a property of the liquid crystal cell and
+            its drive circuit, measured in milliseconds.
+          </p>
+          <p>
+            <strong class="font-medium text-ink">Input lag</strong> is the end-to-end
+            delay from your mouse moving to the screen showing the result. It
+            includes the OS, the GPU, the cable and the monitor's internal
+            processing. Response time is one small part of it.
+          </p>
+          <p>
+            <strong class="font-medium text-ink">Refresh rate</strong> is how often
+            the display redraws, in hertz &mdash; a different quantity entirely, and
+            the one thing here a browser <em>can</em> measure. That is the
+            <a href="/test/refresh-rate" class={linkClass}>refresh rate test</a>.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">The honest limit</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Why no browser can measure grey-to-grey
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            JavaScript can see when it handed a frame to the compositor. Everything
+            that determines response time happens after that: the frame crosses the
+            cable, the monitor's scaler processes it, the drive circuit applies a
+            voltage, and the liquid crystal physically rotates. None of that reports
+            back. There is no return path.
+          </p>
+          <p>
+            Measuring it properly means pointing a photodiode at the panel and
+            reading the luminance curve on an oscilloscope as the transition
+            happens. That is how review sites get their figures, and it is why they
+            need a bench of equipment to do it.
+          </p>
+          <p>
+            So any site showing you a millisecond response-time number from a
+            browser is showing you a number it invented. This page shows you none.
+            What it does instead is let you see the artefacts directly, which is
+            enough to act on.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">What to look for</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">Smear versus overshoot</h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            <strong class="font-medium text-ink">Smearing</strong> is a soft, dim trail
+            behind a moving object, in the direction it came from. It means the
+            pixels have not finished their transition before the next frame
+            arrives. It looks like the object is dragging a shadow.
+          </p>
+          <p>
+            <strong class="font-medium text-ink">Inverse ghosting</strong>, or
+            overshoot, is a distinct <em>bright</em> halo, and it can sit on either
+            the leading or the trailing edge. The overdrive circuit deliberately
+            overvolts the cell to make it switch faster, and when it pushes too far
+            the cell overshoots its target and has to fall back. This is the
+            artefact people mistake for a dirty screen or a dying panel, and unlike
+            smearing it is a setting, not a limitation.
+          </p>
+          <p>
+            Some of the blur you see is not the panel at all. On a sample-and-hold
+            display each frame is held static for its whole duration while your eye
+            tracks the object smoothly, so the image smears across your retina. That
+            happens on a theoretically instant panel too &mdash; which is exactly
+            why OLED still shows motion blur despite near-zero transition times.
+            Only backlight strobing or black frame insertion addresses it.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">The procedure</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">Tune your overdrive setting</h2>
+        <p class="mt-3 text-body-md text-body">
+          This is the actionable part, and the reason the page exists. Most monitors
+          ship on a middle overdrive setting chosen for a spec sheet rather than for
+          your eyes.
+        </p>
+        <ol class="mt-4 flex flex-col gap-4 text-body-md text-body">
+          <li>
+            <strong class="font-medium text-ink">1. Open the Inverse ghost pattern.</strong>
+            A dark object on light grey shows overshoot most clearly, because a
+            bright halo against light grey is unmistakable once you know to look.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">2. Set your monitor's overdrive to off or lowest.</strong>
+            It may be called Overdrive, Response Time, Trace Free, OD or AMA
+            depending on the manufacturer. Note the smearing you see here &mdash;
+            this is the panel with no help.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">3. Step it up one notch at a time.</strong>
+            After each change, watch the trailing edge for several passes. Smearing
+            should shrink. At some point a bright halo appears.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">4. Pick the highest setting with no visible halo.</strong>
+            That is your answer. One notch below the level where overshoot appears
+            is almost always the best real-world setting, whatever the manual
+            recommends.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">5. Confirm with Text scroll.</strong>
+            Abstract patterns can exaggerate. Readable scrolling text at speed is
+            the test that reflects what you will actually notice while working.
+          </li>
+        </ol>
+        <p class="mt-4 text-body-sm text-mute">
+          If overdrive is variable per refresh rate on your monitor &mdash; many are
+          &mdash; repeat this at the rate you actually run. A setting tuned at 144 Hz
+          often overshoots badly at 60.
+        </p>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Four patterns</Eyebrow>
+        <ul class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          <li>
+            <strong class="font-medium text-ink">UFO row</strong> &mdash; three grey
+            pairs at one speed. Grey-to-grey, made visible.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">Edge sweep</strong> &mdash; one hard
+            white edge. Cleanest view of smear.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">Inverse ghost</strong> &mdash; dark on
+            light. Where overshoot shows.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">Text scroll</strong> &mdash; the real
+            world check.
+          </li>
+          <li class="border-t border-hairline pt-3">
+            Speed is in pixels per second because that is the only unit a browser
+            can state honestly. It cannot know your pixel pitch or how far away you
+            are sitting.
+          </li>
+        </ul>
+      </Card>
+    </aside>
+  </div>
+
+  <TestSurface slot="surface" id="surface">
+    <div
+      class="dpt-fill motion-field"
+      role="img"
+      aria-label="Moving high-contrast objects for judging smearing and overdrive overshoot"
+    >
+      <!-- 1. UFO row: same speed, three different grey pairs, so the user is
+           comparing genuine grey-to-grey transitions rather than one extreme. -->
+      <div class="motion-layer" data-motion-layer="ufo">
+        <div class="motion-lane" style="background-color:#d4d4d4">
+          <div
+            class="motion-obj motion-obj--bar"
+            data-motion-object
+            data-motion-for="ufo"
+            style="background-color:#4a4a4a"
+          >
+          </div>
+        </div>
+        <div class="motion-lane" style="background-color:#808080">
+          <div
+            class="motion-obj motion-obj--bar"
+            data-motion-object
+            data-motion-for="ufo"
+            style="background-color:#e6e6e6"
+          >
+          </div>
+        </div>
+        <div class="motion-lane" style="background-color:#2a2a2a">
+          <div
+            class="motion-obj motion-obj--bar"
+            data-motion-object
+            data-motion-for="ufo"
+            style="background-color:#9a9a9a"
+          >
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Edge sweep: maximum contrast, one hard edge. -->
+      <div class="motion-layer motion-layer--black" data-motion-layer="edge">
+        <div
+          class="motion-obj motion-obj--block"
+          data-motion-object
+          data-motion-for="edge"
+          style="background-color:#ffffff"
+        >
+        </div>
+      </div>
+
+      <!-- 3. Inverse ghost check: dark on light, where overshoot reads as a
+           bright halo rather than a dim trail. -->
+      <div class="motion-layer motion-layer--light" data-motion-layer="inverse">
+        <div
+          class="motion-obj motion-obj--slab"
+          data-motion-object
+          data-motion-for="inverse"
+          style="background-color:#0f0f0f"
+        >
+        </div>
+      </div>
+
+      <!-- 4. Text scroll: the case that actually matters day to day. -->
+      <div class="motion-layer motion-layer--black" data-motion-layer="text">
+        <p class="motion-obj motion-obj--text" data-motion-object data-motion-for="text">
+          Sharp edges and legible letterforms at speed &mdash; if you can read this
+          comfortably, the panel is fine for work.
+        </p>
+      </div>
+    </div>
+
+    <TestHud slot="hud" label="Motion test controls">
+      <p data-hud-note class="dpt-hud-note" hidden></p>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-motion-toggle
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Start
+        </button>
+        <button
+          type="button"
+          data-hud-help
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Help
+          <kbd class="dpt-hud-kbd">H</kbd>
+        </button>
+        <button type="button" data-surface-exit class="dpt-hud-btn">
+          Exit
+          <kbd class="dpt-hud-kbd">Esc</kbd>
+        </button>
+      </div>
+
+      <div class="motion-row">
+        <span class="dpt-hud-sub">Pattern</span>
+        {
+          PATTERNS.map((p) => (
+            <button
+              type="button"
+              data-motion-pattern={p.id}
+              aria-pressed={p.id === "ufo" ? "true" : "false"}
+              class="dpt-hud-btn"
+            >
+              {p.label}
+            </button>
+          ))
+        }
+      </div>
+
+      <div class="motion-row">
+        <label class="dpt-hud-sub" for="motion-speed">Speed</label>
+        <input
+          id="motion-speed"
+          type="range"
+          min="200"
+          max="3000"
+          step="20"
+          value="960"
+          data-motion-speed
+          class="motion-range"
+        />
+        <output class="dpt-hud-sub" data-motion-speed-out>960 px/s</output>
+      </div>
+
+      <div data-help-panel hidden class="motion-help">
+        <p data-motion-reveals></p>
+        <p class="dpt-hud-sub">
+          <kbd class="dpt-hud-kbd">&larr;</kbd>
+          <kbd class="dpt-hud-kbd">&rarr;</kbd> change pattern &middot;
+          <kbd class="dpt-hud-kbd">Space</kbd> pause &middot;
+          <kbd class="dpt-hud-kbd">H</kbd> help &middot;
+          <kbd class="dpt-hud-kbd">Esc</kbd> exit
+        </p>
+      </div>
+
+      <p data-motion-status role="status" aria-live="polite" class="motion-sr"></p>
+    </TestHud>
+  </TestSurface>
+</TestPageLayout>
+
+<style>
+  .motion-field {
+    background-color: #000;
+    overflow: hidden;
+  }
+
+  /* Only the selected pattern is laid out. Driven by the dataset the runner sets
+     on the surface, so the DOM stays declarative and there is no per-pattern
+     show/hide code to drift. */
+  .motion-layer {
+    display: none;
+    position: absolute;
+    inset: 0;
+  }
+
+  :global(.dpt-surface[data-motion-pattern="ufo"]) .motion-layer[data-motion-layer="ufo"],
+  :global(.dpt-surface[data-motion-pattern="edge"]) .motion-layer[data-motion-layer="edge"],
+  :global(.dpt-surface[data-motion-pattern="inverse"]) .motion-layer[data-motion-layer="inverse"],
+  :global(.dpt-surface[data-motion-pattern="text"]) .motion-layer[data-motion-layer="text"] {
+    display: block;
+  }
+
+  .motion-layer--black {
+    background-color: #000;
+  }
+
+  .motion-layer--light {
+    background-color: #c0c0c0;
+  }
+
+  /* UFO lanes: stacked, each its own background grey, each clipping its bar so
+     the object enters and leaves cleanly. */
+  .motion-layer[data-motion-layer="ufo"] {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 3vh;
+    padding: 4vh 0;
+  }
+
+  :global(.dpt-surface[data-motion-pattern="ufo"])
+    .motion-layer[data-motion-layer="ufo"] {
+    display: flex;
+  }
+
+  .motion-lane {
+    position: relative;
+    height: 22vh;
+    overflow: hidden;
+  }
+
+  .motion-obj {
+    position: absolute;
+    left: 0;
+    will-change: translate;
+  }
+
+  .motion-obj--bar {
+    top: 0;
+    bottom: 0;
+    width: clamp(80px, 12vw, 200px);
+  }
+
+  .motion-obj--block {
+    top: 0;
+    bottom: 0;
+    width: 45vw;
+  }
+
+  .motion-obj--slab {
+    top: 20vh;
+    height: 60vh;
+    width: clamp(100px, 14vw, 220px);
+  }
+
+  /* No `top: 50%` plus a Y translate here: the runner owns the `translate`
+     property for horizontal motion, so vertical centring has to come from a
+     property it does not write. */
+  .motion-obj--text {
+    top: 42vh;
+    margin: 0;
+    color: #fff;
+    font-family: var(--font-sans);
+    font-size: clamp(1.75rem, 5vw, 3.25rem);
+    font-weight: 500;
+    line-height: 1.1;
+    white-space: nowrap;
+  }
+
+  .motion-row {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.375rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+  }
+
+  .motion-range {
+    width: 10rem;
+    accent-color: #fff;
+  }
+
+  .motion-help {
+    width: 100%;
+    max-width: 34rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .motion-help[hidden] {
+    display: none;
+  }
+
+  .motion-help p + p {
+    margin-top: 0.375rem;
+  }
+
+  .motion-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { mountMotionRunner } from "../../lib/motionRunner";
+  mountMotionRunner();
+</script>

@@ -1,0 +1,51 @@
+---
+/**
+ * SiteLayout — the content shell for every page on the site.
+ *
+ * Originally the plan called for a second, bare document shell for the test
+ * surfaces. That was wrong: a document containing nothing but a black rectangle
+ * has no indexable content, and these pages have to rank against an incumbent.
+ *
+ * Instead, every page is a real content page, and the diagnostic fill is a
+ * `position: fixed` overlay (see components/test/TestSurface.astro) that mounts
+ * only on user intent. Colour purity is preserved by the same rule either way —
+ * no ancestor may carry a filter, opacity, or mix-blend-mode — and once the
+ * Fullscreen API promotes the overlay it is isolated more strictly than a
+ * separate document would have been.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import Nav from "../components/site/Nav.astro";
+import Footer from "../components/site/Footer.astro";
+
+interface Props {
+  title: string;
+  description: string;
+  canonical?: string;
+  noindex?: boolean;
+  themeColor?: string;
+  ogType?: "website" | "article";
+  /** Removes the max-width on <main> for full-bleed hero pages. */
+  bleed?: boolean;
+}
+
+const { bleed = false, ...head } = Astro.props;
+---
+
+<BaseLayout {...head}>
+  <slot name="head" slot="head" />
+
+  <a href="#main" class="sr-only-focusable">Skip to content</a>
+
+  <Nav />
+
+  <main id="main" class:list={[!bleed && "mx-auto max-w-page px-4 md:px-6"]}>
+    <slot />
+  </main>
+
+  <Footer />
+
+  <!-- Diagnostic overlays mount here, outside <main> and outside the content
+       column, so a position:fixed surface never inherits a max-width or a
+       padding that would stop it covering the screen. -->
+  <slot name="surface" />
+</BaseLayout>

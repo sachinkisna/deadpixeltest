@@ -1,0 +1,385 @@
+---
+/**
+ * Resolution & scaling — a readout page, not a full-screen test.
+ *
+ * Deliberately has no LaunchPanel and no TestSurface: there is nothing to look
+ * at, only numbers to report. Every figure comes from the browser at runtime, so
+ * the table is rendered client-side and the server ships a placeholder plus a
+ * <noscript> explanation rather than an empty box.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Button from "../../components/site/Button.astro";
+import Card from "../../components/site/Card.astro";
+import { getTest } from "../../lib/tests";
+
+const test = getTest("resolution");
+if (!test) throw new Error("Missing registry entry: resolution");
+
+/**
+ * Common panel resolutions, for the "am I running native?" comparison.
+ * Static data, so it renders at build time; the script only marks the match.
+ */
+const PANELS = [
+  { w: 1366, h: 768, label: "HD, budget and older laptops" },
+  { w: 1920, h: 1080, label: "1080p / FHD" },
+  { w: 2560, h: 1080, label: "UW-FHD, 21:9 ultrawide" },
+  { w: 2560, h: 1440, label: "1440p / QHD" },
+  { w: 3440, h: 1440, label: "UWQHD, 21:9 ultrawide" },
+  { w: 3840, h: 2160, label: "4K / UHD" },
+  { w: 5120, h: 2880, label: "5K, 27-inch Retina" },
+  { w: 2880, h: 1800, label: "Retina, 15-inch class" },
+  { w: 3024, h: 1964, label: "MacBook Pro, 14-inch" },
+  { w: 3456, h: 2234, label: "MacBook Pro, 16-inch" },
+] as const;
+
+const linkClass =
+  "text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link";
+---
+
+<TestPageLayout
+  title="Screen Resolution Test — Check Native Resolution, Scaling & Pixel Ratio"
+  description="Report the resolution your browser sees, the device pixel ratio behind it, the derived physical pixel count and the reported colour depth — with an honest note on what each figure can and cannot prove."
+  heading="Resolution &amp; scaling"
+  lede={test.description}
+  category="signal"
+  slug="resolution"
+  limitation={test.limitation}
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <section>
+        <Eyebrow as="h2">Readout</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">What your browser reports</h2>
+        <p class="mt-3 text-body-md text-body">
+          Read this with browser zoom at 100%. Zoom is folded into the pixel
+          ratio, so a zoomed page makes every row below describe your zoom level
+          rather than your display.
+        </p>
+
+        <div
+          class="mt-6 rounded-lg border border-hairline bg-canvas p-5 shadow-e2 md:p-6"
+        >
+          <div data-display-report>
+            <p class="text-body-sm text-mute" data-numeric>Reading&hellip;</p>
+          </div>
+
+          <noscript>
+            <p class="text-body-sm text-body">
+              These values only exist while a page is running, so they need
+              JavaScript. Nothing is sent anywhere &mdash; the reading happens in
+              your browser and stays there. Your OS display settings panel
+              reports the same resolution and scaling figures.
+            </p>
+          </noscript>
+
+          <div class="mt-5 flex flex-wrap items-center gap-3">
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              data-display-reread
+            >
+              Read again
+            </Button>
+            <p class="text-caption text-mute">
+              Drag this window to another monitor, then read again.
+            </p>
+          </div>
+        </div>
+
+        <p
+          data-display-status
+          role="status"
+          aria-live="polite"
+          class="mt-3 text-body-sm text-body"
+        >
+        </p>
+
+        <p class="mt-4 text-body-sm text-mute">
+          Colour depth is the weakest row in that table. To find out whether your
+          panel really resolves smooth gradients, run the <a
+            href="/test/banding"
+            class={linkClass}>banding test</a
+          > and look for steps.
+        </p>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Native or scaled</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Detect your native resolution
+        </h2>
+        <p class="mt-3 text-body-md text-body">
+          Compare the derived physical figure against the resolutions panels are
+          actually built at. If it matches one, you are almost certainly running
+          native. If it matches none, the OS is probably scaling the output.
+        </p>
+
+        <ul class="mt-5 flex flex-col gap-2">
+          {
+            PANELS.map((panel) => (
+              <li
+                data-panel-row
+                data-w={String(panel.w)}
+                data-h={String(panel.h)}
+                class="flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-sm px-3 py-2 text-body-sm data-[match]:bg-canvas-soft-2"
+              >
+                <span class="font-mono text-body-sm text-ink" data-numeric>
+                  {panel.w} &times; {panel.h}
+                </span>
+                <span class="text-body">{panel.label}</span>
+                <span
+                  data-panel-match
+                  hidden
+                  class="font-mono text-caption text-warning-deep uppercase"
+                >
+                  matches yours
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+
+        <p
+          data-panel-verdict
+          class="mt-4 rounded-md border border-hairline bg-canvas-soft p-4 text-body-sm text-body"
+        >
+        </p>
+
+        <p class="mt-4 text-body-sm text-mute">
+          Two honest caveats. Portrait-rotated and unusual panels will not appear
+          in that list even when they are running native. And non-integer scaling
+          &mdash; 125% or 150% on Windows &mdash; can produce a derived figure
+          that coincidentally matches a real resolution.
+        </p>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Why it matters</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          The monitor you bought versus the one you are using
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            An LCD has a fixed grid of physical pixels. Feed it anything other
+            than its native resolution and it must interpolate, which softens
+            every edge on the screen. That is why a 4K monitor running at 1440p
+            looks worse than a native 1440p monitor of the same size.
+          </p>
+          <p>
+            Three faults account for most of it. A cable or port that cannot
+            carry the combination, so the display silently negotiates down &mdash;
+            a 4K panel accepting 4K at 30 Hz, or dropping to 1440p to keep 144 Hz.
+            An OS display setting left at a scaled resolution after a driver
+            reinstall. And non-integer scaling, which resamples text on a
+            fractional pixel grid and leaves every glyph faintly soft no matter
+            how good the panel is.
+          </p>
+          <p>
+            None of this announces itself. The picture still fills the screen and
+            nothing looks broken, so people live with a blurred display for years
+            assuming that is simply how it looks.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Fixing it</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">What to change</h2>
+        <ol class="mt-4 flex flex-col gap-4 text-body-md text-body">
+          <li>
+            <strong class="font-medium text-ink">1. Check OS display settings.</strong>
+            On Windows, Display settings should show your panel's full resolution
+            marked <em>(Recommended)</em>. On macOS, hold Option and click Scaled
+            to see the real resolution list. Set scaling to 100% or 200%, never
+            125% or 150%, if soft text bothers you.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">2. Then check the cable.</strong>
+            Resolution and refresh rate share one bandwidth budget, and each
+            connector version caps the total. DisplayPort 1.2 cannot carry 4K
+            above 60 Hz; HDMI 1.4 tops out around 4K at 30 Hz; DisplayPort 1.4 and
+            HDMI 2.1 are what 4K at high refresh needs. A cable sold as &ldquo;4K&rdquo;
+            is not automatically a 4K-at-144&nbsp;Hz cable, and the port on the
+            device matters as much as the cable in it.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">3. Confirm by eye.</strong>
+            Numbers can agree while the picture is still wrong, because a
+            sharpness filter in the monitor's OSD produces the same softness. The
+            <a href="/test/sharpness" class={linkClass}>sharpness test</a> shows
+            single-pixel grids: if they shimmer or look uneven, something in the
+            chain is still resampling. Then confirm timing with the
+            <a href="/test/refresh-rate" class={linkClass}>refresh rate test</a>.
+          </li>
+        </ol>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Quick check</Eyebrow>
+        <ul class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          <li>Set browser zoom to 100% before reading.</li>
+          <li>
+            Derived physical pixels matching a real panel resolution means you are
+            running native.
+          </li>
+          <li>
+            A pixel ratio of 1.25 or 1.5 means fractional scaling. Text will be
+            slightly soft by design.
+          </li>
+          <li>
+            Nothing here leaves your browser. There is no upload and no analytics.
+          </li>
+        </ul>
+      </Card>
+    </aside>
+  </div>
+</TestPageLayout>
+
+<style>
+  /* A <dl>, not a <table>. Each entry is one label paired with one value and a
+     caveat — a description list. A table would promise column semantics that do
+     not exist here (there is no second column of comparable data), and the note
+     would have to be crammed into a cell or a colspan row, which reads badly
+     to a screen reader walking the grid. */
+  .res-list {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .res-list > div {
+    padding: 0.75rem 0;
+    border-top: 1px solid var(--color-hairline);
+  }
+
+  .res-list > div:first-child {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  .res-label {
+    font-size: var(--text-caption);
+    color: var(--color-mute);
+  }
+
+  .res-value {
+    margin: 0.125rem 0 0;
+    font-family: var(--font-mono);
+    font-size: var(--text-body-md);
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink);
+  }
+
+  .res-note {
+    margin: 0.25rem 0 0;
+    font-size: var(--text-body-sm);
+    line-height: 1.5;
+    color: var(--color-body);
+  }
+</style>
+
+<script>
+  import { readDisplayReport } from "../../lib/displayInfo";
+
+  const mountEl = document.querySelector<HTMLElement>("[data-display-report]");
+
+  // Everything lives inside the guard and uses arrow consts: narrowing from an
+  // early return does not survive into hoisted function declarations.
+  if (mountEl) {
+    const mount: HTMLElement = mountEl;
+    const statusEl = document.querySelector<HTMLElement>(
+      "[data-display-status]",
+    );
+    const rereadBtn = document.querySelector<HTMLElement>(
+      "[data-display-reread]",
+    );
+    const verdictEl = document.querySelector<HTMLElement>(
+      "[data-panel-verdict]",
+    );
+    const panelRows = Array.from(
+      document.querySelectorAll<HTMLElement>("[data-panel-row]"),
+    );
+
+    const renderTable = (): void => {
+      const report = readDisplayReport();
+      const list = document.createElement("dl");
+      list.className = "res-list";
+
+      for (const row of report.rows) {
+        const group = document.createElement("div");
+
+        const dt = document.createElement("dt");
+        dt.className = "res-label";
+        dt.textContent = row.label;
+
+        const dd = document.createElement("dd");
+        dd.className = "res-value";
+        dd.textContent = row.value;
+
+        group.append(dt, dd);
+
+        if (row.note) {
+          const note = document.createElement("dd");
+          note.className = "res-note";
+          note.textContent = row.note;
+          group.append(note);
+        }
+
+        list.append(group);
+      }
+
+      mount.replaceChildren(list);
+    };
+
+    const markPanels = (): void => {
+      const dpr = window.devicePixelRatio || 1;
+      const w = Math.round(window.screen.width * dpr);
+      const h = Math.round(window.screen.height * dpr);
+
+      let matched: HTMLElement | null = null;
+
+      for (const row of panelRows) {
+        const rw = Number(row.dataset.w);
+        const rh = Number(row.dataset.h);
+        // Both orientations: a rotated portrait monitor is still native.
+        const hit = (rw === w && rh === h) || (rw === h && rh === w);
+        const badge = row.querySelector<HTMLElement>("[data-panel-match]");
+        if (badge) badge.hidden = !hit;
+        if (hit) {
+          row.dataset.match = "true";
+          matched = row;
+        } else {
+          delete row.dataset.match;
+        }
+      }
+
+      if (!verdictEl) return;
+      verdictEl.textContent = matched
+        ? `Your derived figure of ${w} × ${h} matches a standard panel resolution, so you are very likely running native.`
+        : `Your derived figure of ${w} × ${h} matches none of the resolutions above. Either the OS is scaling the output, or you have an unusual panel. Check your display settings before assuming a fault.`;
+    };
+
+    const refresh = (announce: boolean): void => {
+      renderTable();
+      markPanels();
+      if (announce && statusEl) {
+        statusEl.textContent = `Readout updated. Viewport is now ${window.innerWidth} by ${window.innerHeight} CSS pixels.`;
+      }
+    };
+
+    refresh(false);
+
+    rereadBtn?.addEventListener("click", () => refresh(true));
+
+    // Debounced: a window drag fires resize dozens of times a second, and each
+    // one rebuilds the whole list.
+    let resizeTimer = 0;
+    window.addEventListener("resize", () => {
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(() => refresh(true), 250);
+    });
+  }
+</script>

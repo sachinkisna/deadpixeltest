@@ -1,0 +1,90 @@
+---
+/**
+ * Footer — the full test index.
+ *
+ * Every test is linked here, grouped by category, straight out of the registry
+ * in `lib/tests.ts`. This is intentional: the site's crawl surface is wide and
+ * shallow, and a real sitewide index beats a "related tests" carousel for both
+ * users and crawlers. Adding a test to the registry adds it here.
+ */
+import { groupedTests } from "../../lib/tests";
+import Eyebrow from "./Eyebrow.astro";
+
+const groups = groupedTests();
+
+const about = [
+  { href: "/guides", label: "Guides" },
+  { href: "/about", label: "About & Method" },
+  { href: "/report", label: "My Report" },
+  { href: "/privacy", label: "Privacy" },
+];
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-hairline bg-canvas">
+  <div class="mx-auto max-w-page px-4 py-12 md:px-6 md:py-16">
+    <div class="grid gap-10 md:grid-cols-2 lg:grid-cols-5">
+      <div class="lg:col-span-1">
+        <p class="text-body-sm font-medium text-ink" translate="no">
+          Dead Pixel Test
+        </p>
+        <p class="mt-2 max-w-xs text-body-sm text-body">
+          A free screen diagnostic suite. Runs entirely in your browser, works
+          offline, and never uploads anything.
+        </p>
+      </div>
+
+      {
+        groups.map((group) => (
+          <nav aria-label={group.label}>
+            <Eyebrow as="h2">{group.label}</Eyebrow>
+            <ul class="mt-3 flex flex-col gap-2">
+              {group.tests.map((test) => (
+                <li>
+                  <a
+                    href={test.href}
+                    class="text-body-sm text-body transition-colors duration-150 ease-out hover:text-ink"
+                  >
+                    {test.name}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        ))
+      }
+
+      <nav aria-label="Site">
+        <Eyebrow as="h2">Site</Eyebrow>
+        <ul class="mt-3 flex flex-col gap-2">
+          {
+            about.map((link) => (
+              <li>
+                <a
+                  href={link.href}
+                  class="text-body-sm text-body transition-colors duration-150 ease-out hover:text-ink"
+                >
+                  {link.label}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </div>
+
+    <div
+      class="mt-12 flex flex-col gap-3 border-t border-hairline pt-6 sm:flex-row sm:items-center sm:justify-between"
+    >
+      <p class="text-caption text-mute">
+        &copy; {year} deadpixeltest.space &middot; No ads, no tracking, no
+        account.
+      </p>
+      <p class="text-caption text-mute">
+        Fault classes reference ISO 9241-307. Not affiliated with any display
+        manufacturer.
+      </p>
+    </div>
+  </div>
+</footer>

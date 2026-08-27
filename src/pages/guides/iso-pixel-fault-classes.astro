@@ -1,0 +1,244 @@
+---
+import GuideLayout from "../../layouts/GuideLayout.astro";
+import Card from "../../components/site/Card.astro";
+import {
+  CLASS_LIMITS,
+  FAULT_CLASSES,
+  TYPICAL_CONSUMER_CLASS,
+  megapixelsFrom,
+} from "../../lib/iso";
+
+/**
+ * Every number on this page is derived from lib/iso.ts. Nothing is retyped —
+ * if the class table there ever changes, this guide changes with it.
+ */
+const EXAMPLES = [
+  { label: "1920×1080", w: 1920, h: 1080 },
+  { label: "3840×2160", w: 3840, h: 2160 },
+].map((r) => {
+  const mp = megapixelsFrom(r.w, r.h);
+  const limits = CLASS_LIMITS[TYPICAL_CONSUMER_CLASS];
+  return {
+    ...r,
+    mp,
+    // A panel passes while faults-per-million stays within the limit, so the
+    // largest whole fault count that still passes is floor(limit × megapixels).
+    type1: Math.floor(limits.type1 * mp),
+    type2: Math.floor(limits.type2 * mp),
+    type3: Math.floor(limits.type3 * mp),
+  };
+});
+
+const consumer = CLASS_LIMITS[TYPICAL_CONSUMER_CLASS];
+const hd = EXAMPLES[0]!;
+const uhd = EXAMPLES[1]!;
+const fmt = (n: number) => n.toFixed(2);
+---
+
+<GuideLayout
+  title="ISO Pixel Fault Classes Explained — Class I to IV"
+  description="What ISO 13406-2 and ISO 9241-3xx pixel fault classes mean, the three fault types, why the limits are counted per million pixels so the same fault count grades differently on 1080p and 4K, and why a computed class is evidence rather than a guarantee."
+  heading="ISO pixel fault classes explained"
+  lede="The scheme every pixel warranty is written in: three fault types, four classes, and limits counted per million pixels rather than per screen. That last detail is the one that surprises people."
+  updated="2026-08-27"
+  slug="iso-pixel-fault-classes"
+>
+  <Card surface="soft" elevation="e1" padding="lg">
+    <p class="text-body-sm font-medium text-ink">In short</p>
+    <p class="mt-2 text-body-sm text-body">
+      Faults are graded in three types &mdash; permanently lit, permanently dark,
+      and stuck sub-pixel &mdash; against four classes, with allowances stated
+      <strong>per million pixels</strong>. Because of that, a higher-resolution
+      panel is permitted proportionally more faults. Most consumer panels are sold
+      against <strong>Class {TYPICAL_CONSUMER_CLASS}</strong>. A computed class is
+      evidence for a claim, never a guarantee of one.
+    </p>
+  </Card>
+
+  <h2>Which standard, and why two names</h2>
+  <p>
+    The class numbering everyone quotes comes from <strong>ISO
+    13406-2:2001</strong>, which has been <strong>withdrawn</strong>. It was
+    superseded by ISO 9241-302, -303, -305 and -307:2008. The fault-class scheme
+    carried over into the newer documents, and manufacturers still write their
+    policies in the 13406-2 class numbering in practice &mdash; which is why both
+    names appear here and in the report. If your warranty document cites the
+    withdrawn standard, that is normal and it does not make the document invalid.
+  </p>
+
+  <h2>The three fault types</h2>
+  <ul>
+    <li>
+      <strong>Type 1 &mdash; permanently lit.</strong> A pixel stuck on, showing
+      white on a black field. Often called a hot or bright pixel. Usually the most
+      distracting, and usually the type policies allow fewest of.
+    </li>
+    <li>
+      <strong>Type 2 &mdash; permanently dark.</strong> A pixel receiving no
+      power, so it stays black even on white. A dead pixel.
+    </li>
+    <li>
+      <strong>Type 3 &mdash; stuck sub-pixel.</strong> One or more of a
+      pixel&rsquo;s three channels jammed on or off, so the pixel still lights but
+      with the wrong colour. The most common fault by a wide margin, and the one
+      allowed in the largest numbers.
+    </li>
+  </ul>
+  <p>
+    If you are not sure which you are looking at, read
+    <a href="/guides/dead-vs-stuck-pixel">dead versus stuck pixel</a> first &mdash;
+    the type determines the allowance, so misclassifying a fault changes the answer.
+  </p>
+
+  <h2>The class table</h2>
+  <div class="guide-table">
+    <table>
+      <caption>
+        Maximum permitted faults per million pixels. Class I permits none of
+        anything.
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Class</th>
+          <th scope="col">Type 1</th>
+          <th scope="col">Type 2</th>
+          <th scope="col">Type 3</th>
+          <th scope="col">Clusters (type 1/2)</th>
+          <th scope="col">Clusters (type 3)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          FAULT_CLASSES.map((c) => (
+            <tr>
+              <th scope="row">
+                Class {c}
+                {c === TYPICAL_CONSUMER_CLASS && " (typical consumer)"}
+              </th>
+              <td>{CLASS_LIMITS[c].type1}</td>
+              <td>{CLASS_LIMITS[c].type2}</td>
+              <td>{CLASS_LIMITS[c].type3}</td>
+              <td>{CLASS_LIMITS[c].clusterFull}</td>
+              <td>{CLASS_LIMITS[c].clusterSub}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Class I is a zero-defect panel and is rare and expensive. Class IV is
+    extremely permissive and you are unlikely to be offered anything graded
+    against it. Nearly everything sold to consumers sits at Class
+    {TYPICAL_CONSUMER_CLASS} &mdash; useful context, but not a promise about any
+    specific product, and not a substitute for reading the policy that came with
+    yours.
+  </p>
+
+  <h2>Why resolution changes the answer</h2>
+  <p>
+    The limits above are stated <strong>per million pixels</strong>, not per
+    screen. So the same absolute fault count grades differently depending on how
+    many pixels the panel has. A {hd.label} panel is {fmt(hd.mp)}&nbsp;MP; a
+    {" "}{uhd.label} panel is {fmt(uhd.mp)}&nbsp;MP &mdash; four times as many
+    pixels in the same physical area, and therefore four times the allowance.
+  </p>
+  <p>
+    Working Class {TYPICAL_CONSUMER_CLASS} through both, using its type&nbsp;1
+    limit of {consumer.type1} per million:
+  </p>
+  <div class="guide-table">
+    <table>
+      <caption>
+        Largest whole fault count still within Class {TYPICAL_CONSUMER_CLASS},
+        computed as the per-million limit multiplied by the panel&rsquo;s
+        megapixels.
+      </caption>
+      <thead>
+        <tr>
+          <th scope="col">Panel</th>
+          <th scope="col">Megapixels</th>
+          <th scope="col">Type 1 allowed</th>
+          <th scope="col">Type 2 allowed</th>
+          <th scope="col">Type 3 allowed</th>
+        </tr>
+      </thead>
+      <tbody>
+        {
+          EXAMPLES.map((e) => (
+            <tr>
+              <th scope="row">{e.label}</th>
+              <td>{fmt(e.mp)} MP</td>
+              <td>{e.type1}</td>
+              <td>{e.type2}</td>
+              <td>{e.type3}</td>
+            </tr>
+          ))
+        }
+      </tbody>
+    </table>
+  </div>
+  <p>
+    Read that carefully, because it is counter-intuitive: {uhd.type1} bright
+    pixels on a {uhd.label} panel is within Class {TYPICAL_CONSUMER_CLASS}, while
+    the same {uhd.type1} on {hd.label} is well outside it &mdash; the 1080p panel
+    only tolerates {hd.type1}. The faults are equally visible to you in both
+    cases. The standard is counting defect <em>density</em>, not annoyance.
+  </p>
+  <p>
+    One practical trap follows from this. The megapixel figure has to come from
+    physical device pixels, not the CSS pixels a browser reports. A 4K display
+    presenting as {hd.label} at a device pixel ratio of 2 really has
+    {" "}{fmt(uhd.mp)}&nbsp;MP, and using the CSS figure would roughly quadruple
+    the calculated fault density and wrongly fail a perfectly good panel. The
+    {" "}<a href="/report">report</a> works from device pixels for exactly this
+    reason.
+  </p>
+
+  <h2>Clusters</h2>
+  <p>
+    ISO also limits <strong>clusters</strong> &mdash; several faults falling
+    within a 5&times;5 pixel block, which read as one visible blemish rather than
+    several separate dots. Note that Classes I to III permit no clusters of
+    type&nbsp;1 or type&nbsp;2 faults at all.
+  </p>
+  <p>
+    This site reports clusters as <strong>possible only</strong>, and never uses
+    one to fail a class. The reason is a straightforward accuracy limit: we know
+    where you tapped, and a fingertip or a cursor carries error far larger than
+    five pixels. Flagging a possible cluster tells you to look again closely at
+    that spot with your own eyes. It is not an ISO cluster determination, and we
+    will not pretend otherwise.
+  </p>
+
+  <h2>The honest caveat</h2>
+  <p>
+    These classes are <strong>guidelines, not mandates</strong>. Nothing compels a
+    manufacturer to adopt them, they are interpreted inconsistently across the
+    industry, and some manufacturers ignore the scheme entirely in favour of their
+    own thresholds. A computed class is <strong>evidence</strong> you can put in
+    front of a support agent &mdash; a defensible count of faults by type,
+    normalised the way the industry normalises them. It is not a guarantee of a
+    remedy. What actually governs your claim is the manufacturer&rsquo;s own
+    published policy for your exact model, plus the retailer&rsquo;s returns
+    policy and your statutory rights. See
+    <a href="/guides/dead-pixel-warranty-policies">how to find the policy that
+    applies</a>.
+  </p>
+
+  <h2>Source</h2>
+  <p>
+    The class table in this site&rsquo;s code is transcribed from
+    {" "}<a
+      href="https://en.wikipedia.org/wiki/ISO_13406-2"
+      rel="noopener"
+      target="_blank">the Wikipedia article on ISO 13406-2</a
+    >, verified 2026-08-27. That is a <strong>secondary source</strong>, and we
+    say so rather than implying we have read the standard: ISO 13406-2 and the
+    9241 series are paywalled documents sold by ISO and its national member
+    bodies. If a claim turns on an exact figure, buy the current standard or ask
+    the manufacturer to cite the clause they are relying on. To grade your own
+    panel, run the <a href="/test/sequence">guided pixel test</a> and open your
+    {" "}<a href="/report">report</a>.
+  </p>
+</GuideLayout>

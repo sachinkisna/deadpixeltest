@@ -1,0 +1,561 @@
+---
+/**
+ * /about — the method, and the limits.
+ *
+ * A screen test is a commodity utility: anyone can serve a white rectangle and
+ * plenty of sites do. The only differentiator that survives a sceptical reader
+ * is being straight about what the browser is actually doing, so the "cannot
+ * measure" section is written as plainly as possible and is never softened to
+ * make the tool sound better than it is.
+ *
+ * Facts here are pulled from lib/palette.ts, lib/tests.ts and lib/iso.ts rather
+ * than retyped, so this copy cannot drift away from the code that implements it.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Card from "../components/site/Card.astro";
+import Badge from "../components/site/Badge.astro";
+import Eyebrow from "../components/site/Eyebrow.astro";
+import Button from "../components/site/Button.astro";
+import { getFill, sequenceFills, type Fill } from "../lib/palette";
+import { getTest, TESTS } from "../lib/tests";
+import {
+  CLASS_LIMITS,
+  FAULT_CLASSES,
+  TYPICAL_CONSUMER_CLASS,
+} from "../lib/iso";
+
+const sequence = sequenceFills();
+
+/** Resolves a slug list to fills, skipping anything the palette no longer has. */
+const swatches = (slugs: readonly string[]): readonly Fill[] =>
+  slugs.map((slug) => getFill(slug)).filter((f): f is Fill => f !== undefined);
+
+// Quoted verbatim from the registry rather than paraphrased. It is the single
+// most important honest claim on the site, and two versions of it would
+// eventually disagree with each other.
+const responseTimeLimit = getTest("response-time")?.limitation;
+
+const differentiators = [
+  {
+    title: "Every test in one place",
+    body: `Pixel faults, backlight uniformity, gradient banding, pixel inversion, refresh rate, response time, viewing angle and scaling — ${TESTS.length} tests, one site. Checking a new display should not mean three tabs and two hand-offs halfway through.`,
+  },
+  {
+    title: "Real fills on mobile, not video",
+    body: "Some tools serve a compressed video on phones on the grounds that a browser cannot render full-screen colour. It can. Compression hides genuine defects and invents ones that are not there, so every fill here is painted by the browser at an exact sRGB value with no filter, opacity or blend mode anywhere above it.",
+  },
+  {
+    title: "Honest about what it cannot see",
+    body: "Where a browser genuinely cannot measure something, the page says so instead of printing a number that looks authoritative. That costs a little credibility on first read and earns it back the moment you check the claim against anything else.",
+  },
+  {
+    title: "A report, not a shrug",
+    body: "Faults you tap are logged and graded against the ISO fault classes, so you finish with a map of your panel and a class you can quote — rather than a vague memory of a dot somewhere near the top left.",
+  },
+];
+
+/** Why the fill set is the size and shape it is, grouped by physical cause. */
+const fillGroups = [
+  {
+    slugs: ["white"],
+    title: "White finds dead pixels",
+    body: "A dead pixel receives no power at all, so it never lights. Against a full white field it reads as a black dot, which is the only condition under which you can see it — on a dark fill it is invisible by definition. The same field shows dust, smudges and permanent stains, which is why every test page opens by telling you to clean the screen.",
+  },
+  {
+    slugs: ["black"],
+    title: "Black finds stuck and hot pixels",
+    body: "A stuck pixel has one or more sub-pixels jammed on, so it reads as a bright coloured dot and only stands out against black. That same fill is where backlight bleed and IPS glow show up, so it does double duty as a panel-quality surface.",
+  },
+  {
+    slugs: ["red", "green", "blue"],
+    title: "The primaries isolate which sub-pixel failed",
+    body: "Every pixel is three sub-pixels. Driving one channel at a time tells you which of them is at fault: a dot that stays dark on red but lights up on green and blue has a dead red sub-pixel. Green carries most of the perceived luminance, so faults are unusually obvious there; blue is the dimmest channel, so a blue fault is the one most often missed.",
+  },
+  {
+    slugs: ["cyan", "magenta", "yellow"],
+    title: "The secondaries each omit one channel",
+    body: "Cyan is green and blue with red switched off, magenta drops green, yellow drops blue. A sub-pixel jammed on in the omitted channel has nothing to hide behind, so it appears as a pale or white dot against a saturated field. This is the pair of tests most single-colour tools skip, and it is the pair that catches partial faults.",
+  },
+  {
+    slugs: ["grey-75", "grey-50", "grey-25", "grey-12"],
+    title: "The greys reveal mura and weak pixels",
+    body: "A 50% field is the standard surface for judging evenness, because clouding that pure white washes out and pure black swallows sits plainly visible in the middle of the range. Light grey exposes partially-lit pixels that vanish against white; the darker two expose low-end clouding and black crush that many IPS panels hide on pure black.",
+  },
+];
+
+const canMeasure = [
+  {
+    title: "Exact sRGB fill values",
+    body: "The twelve fills are flat colour painted by the browser, with nothing in the ancestor chain that could alter them. What reaches the panel is the hex value written in the source. This is a real guarantee, and it is the one a video-based implementation cannot make.",
+  },
+  {
+    title: "The refresh rate you are actually getting",
+    body: "Sampling frame timestamps through requestAnimationFrame over a few seconds gives a sustained rate that is reliable to within about a frame. That is more than enough to catch the common fault: a 144 Hz panel quietly running at 60 Hz because of a cable, a driver default or a dock.",
+  },
+  {
+    title: "How many faults there are, and roughly where",
+    body: "Positions come from your own taps, normalised against the viewport, so the map is only as precise as your finger. The counts, though, are exact — and a fault class depends on counts, not coordinates, so an approximate map does not weaken the grade.",
+  },
+  {
+    title: "The geometry the browser was handed",
+    body: "CSS dimensions, devicePixelRatio and the reported colour depth. Enough to tell whether you are probably running native or scaled, which is worth knowing before you judge sharpness or text clarity.",
+  },
+];
+
+const cannotMeasure = [
+  {
+    title: "True grey-to-grey response time",
+    body: "Not possible from a browser at any level of cleverness. JavaScript can time when it asked for a frame and when the compositor acknowledged it; the panel's own overdrive and scaler processing happens downstream of that, inside hardware no page can observe. A millisecond figure measured in a browser is a measurement of the browser.",
+  },
+  {
+    title: "The physical panel",
+    body: "A browser reports CSS pixels and a device pixel ratio. That describes the coordinate space the page was given, not the glass: display scaling, a non-native mode, a TV's overscan or a browser zoom level all move those numbers while nothing changes inside the monitor. Multiplying them gives a plausible device-pixel count — treat it as a strong hint, not a specification.",
+  },
+  {
+    title: "Colour accuracy, gamut and white point",
+    body: "Verifying these needs a colorimeter held against the screen. Nothing rendered on a screen can measure that screen. A fill can prove a sub-pixel is dead; it cannot tell you the panel covers 98% of sRGB or that its white point sits at 6500 K.",
+  },
+  {
+    title: "Brightness and contrast in absolute terms",
+    body: "Nits and static contrast ratio are photometric quantities. The contrast test here counts how many near-black and near-white steps you can still distinguish, which is a genuinely useful check on clipping and on your own settings — but your eye is the instrument, not the browser.",
+  },
+];
+
+const isoRows = FAULT_CLASSES.map((faultClass) => ({
+  faultClass,
+  limits: CLASS_LIMITS[faultClass],
+}));
+
+const nextSteps = [
+  {
+    href: "/test/sequence",
+    title: "Guided pixel test",
+    body: "All twelve fills in order, with defect logging as you go.",
+  },
+  {
+    href: "/tests",
+    title: `All ${TESTS.length} tests`,
+    body: "The full index, grouped by what each test actually tells you.",
+  },
+  {
+    href: "/privacy",
+    title: "Privacy",
+    body: "No analytics, no cookies, no server. Stated specifically.",
+  },
+];
+---
+
+<SiteLayout
+  title="About & Method — How This Screen Test Works, and What It Cannot Measure"
+  description="The method behind Dead Pixel Test: why these twelve sRGB fills, in this order, and what each one physically reveals. Plus an honest account of what a browser can measure, what it cannot, and how ISO 9241-307 fault classes really apply to a warranty claim."
+  bleed
+>
+  <!-- ── Header ────────────────────────────────────────────────────────── -->
+  <header class="border-b border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 pt-12 pb-14 md:px-6 md:pt-16">
+      <Eyebrow>About &amp; method</Eyebrow>
+      <h1 class="mt-3 max-w-3xl text-display-lg text-ink">
+        How this works, and what it refuses to claim.
+      </h1>
+      <p class="mt-4 max-w-prose text-body-lg text-body">
+        A screen test is a commodity utility. Anyone can serve a white
+        rectangle, and a great many sites do. This page explains what is
+        actually being rendered, why the fill set is what it is, and &mdash;
+        more usefully &mdash; the specific things a browser cannot measure no
+        matter how confidently another page reports them.
+      </p>
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Button href="/test/sequence" size="lg" shape="pill">
+          Start the guided test
+        </Button>
+        <Button href="/tests" size="lg" shape="pill" variant="secondary">
+          See all {TESTS.length} tests
+        </Button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── What this is ──────────────────────────────────────────────────── -->
+  <section
+    aria-labelledby="what"
+    class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16"
+  >
+    <Eyebrow>What this is</Eyebrow>
+    <h2 id="what" class="mt-2 max-w-2xl text-display-md text-ink">
+      Four things that make this one worth using.
+    </h2>
+    <p class="mt-3 max-w-prose text-body-md text-body">
+      Not a claim to be the only screen test that works. A claim about the four
+      places the others tend to stop short.
+    </p>
+
+    <div class="mt-10 grid gap-4 md:grid-cols-2">
+      {
+        differentiators.map((item) => (
+          <Card elevation="e2" padding="lg" class="h-full">
+            <h3 class="text-display-sm text-ink">{item.title}</h3>
+            <p class="mt-2 text-body-md text-body">{item.body}</p>
+          </Card>
+        ))
+      }
+    </div>
+  </section>
+
+  <!-- ── Method: the twelve fills ──────────────────────────────────────── -->
+  <section aria-labelledby="method" class="border-y border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+      <Eyebrow>Method</Eyebrow>
+      <h2 id="method" class="mt-2 max-w-2xl text-display-md text-ink">
+        Why twelve fills, and why these twelve.
+      </h2>
+      <p class="mt-3 max-w-prose text-body-md text-body">
+        The set is not a colour picker. Each fill is here because a specific
+        class of fault is visible on it and invisible on the others, so removing
+        any one of them would leave a category of defect unfindable.
+      </p>
+
+      <ul class="mt-10 flex flex-col gap-8">
+        {
+          fillGroups.map((group) => (
+            <li class="grid gap-4 md:grid-cols-[10rem_minmax(0,1fr)] md:gap-8">
+              <div class="flex flex-wrap gap-2">
+                {swatches(group.slugs).map((fill) => (
+                  <span
+                    class="size-10 shrink-0 rounded-sm shadow-e1"
+                    style={`background-color:${fill.hex}`}
+                    title={`${fill.name} ${fill.hex}`}
+                    aria-hidden="true"
+                  />
+                ))}
+              </div>
+              <div class="max-w-prose">
+                <h3 class="text-display-sm text-ink">{group.title}</h3>
+                <p class="mt-2 text-body-md text-body">{group.body}</p>
+                <p class="mt-2 font-mono text-caption text-mute uppercase">
+                  {swatches(group.slugs)
+                    .map((fill) => fill.hex)
+                    .join("  ")}
+                </p>
+              </div>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <!-- ── Method: the order ─────────────────────────────────────────────── -->
+  <section
+    aria-labelledby="order"
+    class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16"
+  >
+    <Eyebrow>The order</Eyebrow>
+    <h2 id="order" class="mt-2 max-w-2xl text-display-md text-ink">
+      Light to dark first, primaries last.
+    </h2>
+
+    <div class="mt-3 flex max-w-prose flex-col gap-4 text-body-md text-body">
+      <p>
+        The guided run walks white, then the three greys, then black and near
+        black, and only then the primaries and secondaries. There are two
+        reasons for that shape, and neither is aesthetic.
+      </p>
+      <p>
+        The first is your eyes. Pupils adapt slowly, and a run that flashed you
+        from full white to full black would leave you looking at afterimages
+        rather than at your panel. A descending ramp lets adaptation keep up, so
+        the faint faults &mdash; low-end clouding, a barely-lit sub-pixel
+        &mdash; are visible when you reach them instead of drowned in glare.
+      </p>
+      <p>
+        The second is that the greys sit between the two fields that hide
+        uniformity problems. Pure white washes out mura and pure black swallows
+        it; a mid-grey field shows it. Putting the greys early means you judge
+        evenness before you have started hunting individual dots, which are two
+        different kinds of looking and do not mix well.
+      </p>
+      <p>
+        The primaries and secondaries come last because by then you know which
+        pixels to examine. Isolating a channel is a diagnostic step, not a
+        search step &mdash; it answers <em>which sub-pixel</em> about a fault you
+        have already found.
+      </p>
+    </div>
+
+    <ol class="mt-8 flex flex-wrap gap-2">
+      {
+        sequence.map((fill, i) => (
+          <li>
+            <a
+              href={`/test/${fill.slug}`}
+              class="flex items-center gap-2 rounded-sm border border-hairline bg-canvas py-1.5 pr-3 pl-2 shadow-e1 transition-shadow duration-150 ease-out hover:shadow-e3"
+            >
+              <span
+                class="size-5 shrink-0 rounded-xs shadow-e1"
+                style={`background-color:${fill.hex}`}
+                aria-hidden="true"
+              />
+              <span class="font-mono text-caption text-mute" data-numeric>
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span class="text-body-sm text-ink">{fill.name}</span>
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <!-- ── Measurable vs not ─────────────────────────────────────────────── -->
+  <section aria-labelledby="limits" class="border-y border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+      <Eyebrow>Limits</Eyebrow>
+      <h2 id="limits" class="mt-2 max-w-2xl text-display-md text-ink">
+        What a browser can measure, and what it cannot.
+      </h2>
+      <p class="mt-3 max-w-prose text-body-md text-body">
+        This is the section worth reading before you trust any screen test,
+        including this one. A page runs inside a sandbox several layers above
+        the panel, and that distance decides which questions it can honestly
+        answer.
+      </p>
+
+      <div class="mt-10 grid gap-10 md:grid-cols-2 md:gap-8">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-display-sm text-ink">Reliable</h3>
+            <Badge tone="success">Measured</Badge>
+          </div>
+          <ul class="mt-5 flex flex-col gap-5">
+            {
+              canMeasure.map((item) => (
+                <li class="max-w-prose">
+                  <h4 class="text-body-lg font-medium text-ink">
+                    {item.title}
+                  </h4>
+                  <p class="mt-1 text-body-sm text-body">{item.body}</p>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="text-display-sm text-ink">Not measurable here</h3>
+            <Badge tone="warning">Out of reach</Badge>
+          </div>
+          <ul class="mt-5 flex flex-col gap-5">
+            {
+              cannotMeasure.map((item) => (
+                <li class="max-w-prose">
+                  <h4 class="text-body-lg font-medium text-ink">
+                    {item.title}
+                  </h4>
+                  <p class="mt-1 text-body-sm text-body">{item.body}</p>
+                </li>
+              ))
+            }
+          </ul>
+        </div>
+      </div>
+
+      {
+        responseTimeLimit && (
+          <aside
+            aria-label="Response time limitation"
+            class="mt-12 max-w-prose rounded-lg border border-warning bg-warning-soft p-5"
+          >
+            <p class="text-body-sm font-medium text-warning-deep">
+              Stated verbatim on the response time test
+            </p>
+            <p class="mt-2 text-body-sm text-warning-deep">
+              {responseTimeLimit}
+            </p>
+          </aside>
+        )
+      }
+    </div>
+  </section>
+
+  <!-- ── ISO fault classes ─────────────────────────────────────────────── -->
+  <section
+    aria-labelledby="iso"
+    class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16"
+  >
+    <Eyebrow>Standards</Eyebrow>
+    <h2 id="iso" class="mt-2 max-w-2xl text-display-md text-ink">
+      On the ISO fault classes.
+    </h2>
+
+    <div class="mt-3 flex max-w-prose flex-col gap-4 text-body-md text-body">
+      <p>
+        The class scheme people mean when they say &ldquo;ISO&rdquo; is
+        ISO&nbsp;13406-2. The 2001 edition of that standard has been
+        <strong class="font-medium text-ink">withdrawn</strong>. It was
+        superseded by ISO&nbsp;9241-302, -303, -305 and -307:2008. The
+        fault-class idea carried over, and the 13406-2 class numbering is still
+        what manufacturers quote in practice, so both names appear on this site
+        rather than pretending the older one no longer exists.
+      </p>
+      <p>
+        More important than the lineage: the classes are
+        <strong class="font-medium text-ink">guidelines, not mandates</strong>.
+        Nothing obliges a manufacturer to sell against a particular class,
+        interpretations differ between companies, and some ignore the scheme
+        entirely. A class computed from your report is evidence you can put in
+        front of a retailer. It is not an entitlement, and no web page can turn
+        it into one &mdash; the policy that governs your claim is the
+        manufacturer's or the seller's own, in the version current on the day
+        you bought.
+      </p>
+    </div>
+
+    <div class="mt-8 max-w-prose overflow-x-auto">
+      <table class="w-full border-collapse text-left text-body-sm" data-numeric>
+        <caption class="pb-3 text-left text-caption text-mute">
+          Maximum permitted faults per million pixels, by ISO&nbsp;13406-2
+          class. Type&nbsp;1 is a hot pixel, permanently lit; type&nbsp;2 a dead
+          pixel, permanently black; type&nbsp;3 a stuck sub-pixel with one
+          channel jammed.
+        </caption>
+        <thead>
+          <tr class="border-b border-hairline">
+            <th scope="col" class="py-2 pr-4 text-left font-medium text-ink">
+              Class
+            </th>
+            <th scope="col" class="py-2 pr-4 text-left font-medium text-ink">
+              Type 1 (hot)
+            </th>
+            <th scope="col" class="py-2 pr-4 text-left font-medium text-ink">
+              Type 2 (dead)
+            </th>
+            <th scope="col" class="py-2 text-left font-medium text-ink">
+              Type 3 (sub-pixel)
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {
+            isoRows.map((row) => (
+              <tr class="border-b border-hairline last:border-b-0">
+                <th
+                  scope="row"
+                  class="py-2 pr-4 text-left font-medium whitespace-nowrap text-ink"
+                >
+                  <span class="font-mono">Class {row.faultClass}</span>
+                  {row.faultClass === TYPICAL_CONSUMER_CLASS && (
+                    <Badge tone="info" class="ml-2">
+                      Typical
+                    </Badge>
+                  )}
+                </th>
+                <td class="py-2 pr-4 text-body">{row.limits.type1}</td>
+                <td class="py-2 pr-4 text-body">{row.limits.type2}</td>
+                <td class="py-2 text-body">{row.limits.type3}</td>
+              </tr>
+            ))
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="mt-6 flex max-w-prose flex-col gap-4 text-body-md text-body">
+      <p>
+        Class {TYPICAL_CONSUMER_CLASS} is marked because the standard's own
+        commentary describes it as where most consumer panels are sold. That is
+        context for reading a result, not a promise about any specific product
+        &mdash; including yours.
+      </p>
+      <p>
+        Cluster limits are deliberately left out of that table, because this
+        site cannot evaluate them honestly. ISO defines a cluster inside a
+        5&times;5 pixel block, and a tap coordinate carries finger- or
+        cursor-scale error many times larger than five pixels. Defects logged
+        close together are therefore flagged as a
+        <em>possible</em> cluster so that you go back and look again with your
+        nose closer to the glass. They are never used to fail a grade.
+      </p>
+      <p>
+        The same caution applies to the pixel count underneath the grade. A rate
+        per million pixels needs the panel's physical pixel count, and as above,
+        the browser only offers CSS dimensions multiplied by a device pixel
+        ratio. On a scaled display that product can be wrong, and a wrong pixel
+        count moves the rate in both directions.
+      </p>
+    </div>
+  </section>
+
+  <!-- ── Warranty thresholds ───────────────────────────────────────────── -->
+  <section aria-labelledby="warranty" class="border-y border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+      <Eyebrow>Warranty thresholds</Eyebrow>
+      <h2 id="warranty" class="mt-2 max-w-2xl text-display-md text-ink">
+        There are no per-brand defect numbers on this site.
+      </h2>
+
+      <div class="mt-3 flex max-w-prose flex-col gap-4 text-body-md text-body">
+        <p>
+          It is a popular table to publish: a list of manufacturers alongside
+          how many dead pixels each will tolerate before it replaces a panel.
+          You will not find it here, and the reason is not modesty.
+        </p>
+        <p>
+          Those policies change. They vary by product line, by region, by sales
+          channel, by whether the display is sold as consumer or professional,
+          and by the date on your receipt. A number that was right when it was
+          written goes stale quietly, without anything on the page looking
+          wrong.
+        </p>
+        <p>
+          The failure mode is what settles it. Someone reads
+          &ldquo;three dead pixels&rdquo; here, counts two on their own screen,
+          concludes they have no case and never opens the claim &mdash; when the
+          policy that actually applies to them would have replaced the panel.
+          That is a real cost, borne by the reader, in exchange for a tidier
+          page. It is not a trade worth making.
+        </p>
+        <p>
+          So use the report to establish exactly what is on your panel and how
+          many of each type there are. Then confirm the threshold with whoever
+          owes you the remedy: the retailer you bought from, or the
+          manufacturer's current warranty document for your specific model. Ask
+          for it in writing before you rely on it.
+        </p>
+      </div>
+
+      <div class="mt-8">
+        <Badge tone="warning">
+          Confirm any threshold with your seller before acting on it
+        </Badge>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Where to go next ──────────────────────────────────────────────── -->
+  <section
+    aria-labelledby="next"
+    class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16"
+  >
+    <Eyebrow>Next</Eyebrow>
+    <h2 id="next" class="mt-2 text-display-md text-ink">Where to go from here</h2>
+
+    <ul class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        nextSteps.map((step) => (
+          <li>
+            <Card
+              href={step.href}
+              elevation="e2"
+              padding="lg"
+              class="flex h-full flex-col"
+            >
+              <h3 class="text-body-lg font-medium text-ink">{step.title}</h3>
+              <p class="mt-2 text-body-sm text-body">{step.body}</p>
+            </Card>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+</SiteLayout>

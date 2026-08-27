@@ -1,0 +1,23 @@
+---
+/**
+ * TestHud — the control bar that floats over a diagnostic surface.
+ *
+ * Not `role="toolbar"`: that role commits to arrow-key navigation between
+ * items, and the arrow keys are already bound to advancing the test. A plain
+ * labelled group keeps Tab working as users expect and leaves the arrows free.
+ *
+ * Styles live in global.css (`.dpt-hud*`) rather than here, because the same
+ * chrome is shared by thirteen test pages and must stay byte-identical across
+ * all of them.
+ */
+interface Props {
+  id?: string;
+  label?: string;
+}
+
+const { id, label = "Test controls" } = Astro.props;
+---
+
+<div id={id} class="dpt-hud" role="group" aria-label={label}>
+  <slot />
+</div>

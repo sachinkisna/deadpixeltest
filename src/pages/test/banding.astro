@@ -1,0 +1,400 @@
+---
+/**
+ * Gradient banding test.
+ *
+ * The ramps are CSS gradients, not images: a JPEG or PNG ramp would carry its
+ * own quantisation and we would be testing the file rather than the panel. The
+ * trade-off is that the browser's compositor gets to interpolate our gradient,
+ * which is why the limitation notice on this page is unusually blunt about what
+ * a clean result does not prove.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import TestSurface from "../../components/test/TestSurface.astro";
+import TestHud from "../../components/test/TestHud.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Card from "../../components/site/Card.astro";
+import { getTest } from "../../lib/tests";
+import type { PatternDef } from "../../lib/patternRunner";
+
+const test = getTest("banding");
+if (!test) throw new Error("Missing registry entry: banding");
+
+const LIMITATION =
+  "This test is only informative when it fails. Your browser's compositor may dither the gradient itself before it ever reaches the graphics driver, which can smooth over real quantisation in the panel — so a clean ramp does not prove you have a true 8-bit display. Visible banding, on the other hand, is always real: something in the chain is throwing away levels. Read a clean pass as inconclusive and a dirty pass as a finding.";
+
+const PATTERNS: readonly PatternDef[] = [
+  {
+    id: "grey",
+    name: "Greyscale ramp",
+    reveals:
+      "The most revealing ramp, because banding in grey has no colour to hide behind. Sweep your eyes slowly from left to right and look for flat plateaus separated by edges.",
+  },
+  {
+    id: "red",
+    name: "Red ramp",
+    reveals:
+      "Isolates the red channel. Banding on one primary but not the others usually means the panel's lookup table, not the signal — a per-channel calibration problem.",
+  },
+  {
+    id: "green",
+    name: "Green ramp",
+    reveals:
+      "Green carries most of the perceived luminance, so bands here are the easiest of the three primaries to spot and the most objectionable in real content.",
+  },
+  {
+    id: "blue",
+    name: "Blue ramp",
+    reveals:
+      "Blue is where 6-bit panels fail first, and where your own eye is least sensitive. Judge it last, and do not be surprised if it looks slightly worse than the others.",
+  },
+  {
+    id: "staircase",
+    name: "32-step staircase",
+    reveals:
+      "The reference. These steps are meant to be visible — count them. If you cannot separate all 32, the panel is losing levels, and the smooth ramps were flattering it.",
+  },
+];
+---
+
+<TestPageLayout
+  title="Gradient Banding Test — Check for Posterisation and 8-Bit Colour"
+  description="Free full-screen gradient ramps that expose colour banding, posterisation and dithering. Explains 6-bit plus FRC versus true 8-bit, why the cable and GPU matter, and what a clean result really proves."
+  heading="Gradient banding test"
+  lede={test.description}
+  category="panel"
+  slug="banding"
+  limitation={LIMITATION}
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel
+        label="Launch gradient ramps"
+        prerequisites={[
+          "Set browser zoom to 100%. Zooming resamples the gradient and can invent bands that are not on your panel.",
+          "Turn off any dynamic contrast, HDR auto-switching or picture mode with the word Vivid in it. All three quantise deliberately.",
+          "Dim the room a little. Faint banding in the darkest quarter of a ramp disappears under a reflection.",
+        ]}
+      />
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Reading it</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          What a good ramp looks like
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            <strong class="font-medium text-ink">Good.</strong> The ramp reads as
+            one continuous sweep. You cannot point at a place where the
+            brightness jumps, and you cannot count anything. There may be faint
+            fine-grained noise, which is dithering doing its job.
+          </p>
+          <p>
+            <strong class="font-medium text-ink">Faulty.</strong> The ramp breaks
+            into discrete vertical strips &mdash; flat plateaus with a visible
+            edge between them, sometimes only eight or sixteen across the whole
+            width. That is posterisation, and it means levels have been thrown
+            away somewhere between the browser and the panel.
+          </p>
+          <p>
+            Then check the staircase. Its 32 steps are drawn with hard stops and
+            <em>should</em> be individually countable. If the smooth ramps looked
+            clean but you cannot resolve the staircase's darkest steps, the panel
+            is compressing shadows even though the ramp looked fine &mdash; take
+            that to the
+            <a
+              href="/test/contrast"
+              class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+              >contrast and black level test</a
+            >, which measures it directly.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Causes</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Four suspects, and a browser cannot tell them apart
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Banding is a symptom of quantisation, and the signal chain offers
+            several places for it to happen. This page can show you the symptom;
+            it cannot tell you which link is responsible. Work through them in
+            this order, because they get progressively harder to fix:
+          </p>
+          <ol class="flex flex-col gap-3">
+            <li>
+              <strong class="font-medium text-ink">1. The link budget.</strong>
+              This is the most common and the most fixable. A 4K 144&nbsp;Hz
+              signal does not fit down every cable, so the driver silently drops
+              to 8-bit, or to 4:2:2 chroma subsampling, to make it fit. Try a
+              lower refresh rate or resolution and re-run this test &mdash; if the
+              banding vanishes, you have found it, and the answer is a better
+              cable or DSC.
+            </li>
+            <li>
+              <strong class="font-medium text-ink">2. The GPU output depth.</strong>
+              Both NVIDIA and AMD control panels expose an output colour depth
+              setting that can sit at 6 or 8 bits regardless of what the panel
+              accepts. Check it before blaming hardware.
+            </li>
+            <li>
+              <strong class="font-medium text-ink">3. The OS colour pipeline.</strong>
+              An ICC profile with a coarse tone curve, or Windows HDR applied to
+              an SDR desktop, will band content that is otherwise perfect.
+            </li>
+            <li>
+              <strong class="font-medium text-ink">4. The panel's own bit depth.</strong>
+              Many panels sold as 8-bit are 6-bit with frame-rate control. That
+              is a specification, not a fault, and cannot be changed.
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">FRC</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          6-bit plus FRC, and why it can look like noise
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            A true 8-bit panel drives 256 levels per channel. A 6-bit panel
+            drives 64. Frame-rate control closes the gap temporally: to show a
+            level that sits between two it can actually produce, the panel
+            alternates between the level above and the level below on successive
+            frames, and your eye averages them.
+          </p>
+          <p>
+            It works surprisingly well, which is why 6-bit + FRC panels ship in
+            enormous volume. But the artefact it leaves is different from
+            banding: instead of flat plateaus you get a faint, fizzing,
+            fine-grained texture, most visible in the darkest fifth of the ramp
+            and in large areas of near-flat colour. Some people never notice it;
+            others find it more irritating than the bands it replaced.
+          </p>
+          <p>
+            So if the ramps look smooth but slightly <em>alive</em>, you are
+            probably looking at FRC rather than a fault. It is a cost decision by
+            the manufacturer, and no setting turns it off.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Patterns</Eyebrow>
+        <ol class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          {
+            PATTERNS.map((pattern, i) => (
+              <li>
+                <p class="font-medium text-ink">
+                  <span class="font-mono text-caption text-mute">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>{" "}
+                  {pattern.name}
+                </p>
+                <p class="mt-0.5">{pattern.reveals}</p>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="mt-5 text-caption text-mute">
+          Arrow keys move between ramps without leaving full screen. Press <kbd
+            class="rounded-xs border border-hairline bg-canvas-soft-2 px-1 font-mono text-caption"
+            >H</kbd
+          > for what to look for on each one.
+        </p>
+      </Card>
+    </aside>
+  </div>
+
+  <!-- The pattern list crosses from frontmatter to the client here rather than
+       being retyped in the module script below. -->
+  <script
+    slot="surface"
+    is:inline
+    type="application/json"
+    data-pattern-config
+    set:html={JSON.stringify(PATTERNS)}
+  />
+
+  <TestSurface slot="surface" id="surface">
+    <div
+      class="bnd-layer"
+      role="img"
+      aria-label="Full screen gradient ramp for judging colour banding"
+    >
+    </div>
+
+    <TestHud slot="hud" label="Gradient ramp controls">
+      <p data-hud-note class="dpt-hud-note" hidden></p>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-nav-prev
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Previous ramp"
+        >
+          <span aria-hidden="true">&#9664;</span>
+        </button>
+        <span class="dpt-hud-label">
+          <b data-pattern-name>Greyscale ramp</b>
+          <span class="dpt-hud-sub" data-pattern-position>1 / 5</span>
+        </span>
+        <button
+          type="button"
+          data-nav-next
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Next ramp"
+        >
+          <span aria-hidden="true">&#9654;</span>
+        </button>
+      </div>
+
+      <div class="dpt-hud-group">
+        <button type="button" data-hud-help aria-pressed="false" class="dpt-hud-btn">
+          Help
+          <kbd class="dpt-hud-kbd">H</kbd>
+        </button>
+        <button type="button" data-surface-exit class="dpt-hud-btn">
+          Exit
+          <kbd class="dpt-hud-kbd">Esc</kbd>
+        </button>
+      </div>
+
+      <div data-help-panel hidden class="bnd-help">
+        <p data-pattern-reveals></p>
+        <p class="dpt-hud-sub">
+          Flat plateaus with edges between them are banding. Fine fizzing texture
+          is dithering, which is not a fault.
+        </p>
+      </div>
+
+      <p data-pattern-status role="status" aria-live="polite" class="bnd-sr"></p>
+    </TestHud>
+  </TestSurface>
+</TestPageLayout>
+
+<style>
+  .bnd-layer {
+    position: absolute;
+    inset: 0;
+    background-color: #000;
+    /* No filter, no opacity, no blend mode — see the COLOUR PURITY CONTRACT in
+       TestSurface.astro. A gradient is the only thing painted here. */
+  }
+
+  /* ── The ramps ───────────────────────────────────────────────────────────
+     Two stops only. Adding intermediate stops would not add precision: the
+     browser interpolates between whatever stops we give it, so a 256-stop
+     gradient is just our own quantisation layered on top of the browser's.
+     Black to white in one step lets the compositor use its full precision. */
+
+  :global(.dpt-surface[data-pattern="grey"]) .bnd-layer {
+    background-image: linear-gradient(to right, #000000, #ffffff);
+  }
+
+  :global(.dpt-surface[data-pattern="red"]) .bnd-layer {
+    background-image: linear-gradient(to right, #000000, #ff0000);
+  }
+
+  :global(.dpt-surface[data-pattern="green"]) .bnd-layer {
+    background-image: linear-gradient(to right, #000000, #00ff00);
+  }
+
+  :global(.dpt-surface[data-pattern="blue"]) .bnd-layer {
+    background-image: linear-gradient(to right, #000000, #0000ff);
+  }
+
+  /* ── The staircase ───────────────────────────────────────────────────────
+     Hard stops are mandatory here. Every stop is declared twice, at the end of
+     one band and the start of the next, so there is zero interpolation
+     distance between them. A "staircase" built from single stops would be
+     smoothly interpolated by the browser and would become just another ramp —
+     which would destroy the whole point, since this pattern exists to give the
+     user a known-quantised reference to compare the smooth ramps against.
+
+     32 steps of 3.125% each, expressed in percentages so the staircase fills
+     any viewport width without a media query. */
+  :global(.dpt-surface[data-pattern="staircase"]) .bnd-layer {
+    background-image: linear-gradient(
+      to right,
+      #000000 0% 3.125%,
+      #080808 3.125% 6.25%,
+      #101010 6.25% 9.375%,
+      #181818 9.375% 12.5%,
+      #212121 12.5% 15.625%,
+      #292929 15.625% 18.75%,
+      #313131 18.75% 21.875%,
+      #393939 21.875% 25%,
+      #424242 25% 28.125%,
+      #4a4a4a 28.125% 31.25%,
+      #525252 31.25% 34.375%,
+      #5a5a5a 34.375% 37.5%,
+      #636363 37.5% 40.625%,
+      #6b6b6b 40.625% 43.75%,
+      #737373 43.75% 46.875%,
+      #7b7b7b 46.875% 50%,
+      #848484 50% 53.125%,
+      #8c8c8c 53.125% 56.25%,
+      #949494 56.25% 59.375%,
+      #9c9c9c 59.375% 62.5%,
+      #a5a5a5 62.5% 65.625%,
+      #adadad 65.625% 68.75%,
+      #b5b5b5 68.75% 71.875%,
+      #bdbdbd 71.875% 75%,
+      #c6c6c6 75% 78.125%,
+      #cecece 78.125% 81.25%,
+      #d6d6d6 81.25% 84.375%,
+      #dedede 84.375% 87.5%,
+      #e7e7e7 87.5% 90.625%,
+      #efefef 90.625% 93.75%,
+      #f7f7f7 93.75% 96.875%,
+      #ffffff 96.875% 100%
+    );
+  }
+
+  .bnd-help {
+    width: 100%;
+    max-width: 34rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .bnd-help[hidden] {
+    display: none;
+  }
+
+  .bnd-help p + p {
+    margin-top: 0.375rem;
+  }
+
+  .bnd-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { mountPatternRunner, type PatternDef } from "../../lib/patternRunner";
+
+  const configEl = document.querySelector<HTMLScriptElement>(
+    "[data-pattern-config]",
+  );
+  if (configEl?.textContent) {
+    mountPatternRunner({
+      patterns: JSON.parse(configEl.textContent) as PatternDef[],
+    });
+  }
+</script>

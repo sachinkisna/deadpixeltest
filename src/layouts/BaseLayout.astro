@@ -1,0 +1,87 @@
+---
+/**
+ * BaseLayout — the shared document shell.
+ *
+ * Owns <head> only. Deliberately renders no visual chrome so that both
+ * SiteLayout (full design system) and TestLayout (bare diagnostic surface) can
+ * build on it without inheriting anything that would paint over a colour fill.
+ */
+import "../styles/global.css";
+
+export interface Props {
+  title: string;
+  description: string;
+  /** Overrides the derived canonical URL. */
+  canonical?: string;
+  /** Keeps utility surfaces and the report out of the index. */
+  noindex?: boolean;
+  /** Matches the page background so mobile browser chrome blends in. */
+  themeColor?: string;
+  ogType?: "website" | "article";
+}
+
+const {
+  title,
+  description,
+  canonical,
+  noindex = false,
+  themeColor = "#fafafa",
+  ogType = "website",
+} = Astro.props;
+
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).href;
+const ogImage = new URL("/og.png", Astro.site).href;
+const SITE_NAME = "Dead Pixel Test";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- No maximum-scale / user-scalable=no: never block pinch zoom. -->
+
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    {noindex && <meta name="robots" content="noindex, follow" />}
+
+    <meta name="theme-color" content={themeColor} />
+    <meta name="color-scheme" content="light" />
+
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/icons/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+
+    <meta name="generator" content={Astro.generator} />
+
+    <slot name="head" />
+  </head>
+  <body>
+    <slot />
+
+    <script>
+      // Register the offline service worker. Wrapped so a failure — private
+      // mode, unsupported browser, http origin — never breaks the page.
+      if ("serviceWorker" in navigator) {
+        window.addEventListener("load", () => {
+          navigator.serviceWorker.register("/sw.js").catch(() => {
+            /* offline support unavailable; the site still works online */
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

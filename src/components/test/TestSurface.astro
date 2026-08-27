@@ -1,0 +1,68 @@
+---
+/**
+ * TestSurface — the full-screen diagnostic overlay.
+ *
+ * COLOUR PURITY CONTRACT
+ * ----------------------
+ * Everything inside this element is under measurement. Therefore, on this
+ * element, its ancestors (`body`, `html`), and any fill layer passed into the
+ * default slot, the following must NEVER be set:
+ *
+ *   filter · backdrop-filter · opacity < 1 · mix-blend-mode · isolation
+ *
+ * Any of those force the fill through a compositing pass, and the pixels the
+ * user inspects are then no longer the pixels we specified. A `transform` is
+ * also avoided on the fill for the same reason (it can trigger resampling).
+ *
+ * HUD chrome is exempt: it paints its own opaque rectangle *over* the fill
+ * rather than through it, so it cannot alter the colour of anything still
+ * visible. That is also why the HUD is solid black rather than translucent —
+ * a translucent panel would leave the user unsure which pixels are real.
+ *
+ * ACCESSIBILITY
+ * -------------
+ * This container carries no ARIA role. `role="img"` here would be wrong: the
+ * children of an `img` are presentational, which would erase the entire HUD
+ * from the accessibility tree. The *fill layer* is the thing that conveys
+ * information visually, so it is the element that takes `role="img"` and an
+ * accessible name.
+ */
+export interface Props {
+  id: string;
+}
+
+const { id } = Astro.props;
+---
+
+<div id={id} class="dpt-surface" hidden data-cursor="visible">
+  <slot />
+  <slot name="hud" />
+</div>
+
+<style>
+  .dpt-surface {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    /* Black rather than transparent: if a fill layer ever fails to paint, a
+       black screen is an obvious fault, whereas showing the page underneath
+       would look like a working test. */
+    background-color: #000;
+    /* Blocks pull-to-refresh and rubber-banding mid-test. */
+    overscroll-behavior: none;
+    /* pinch-zoom, not none: panning is meaningless here, but zooming into a
+       suspected pixel is one of the most useful things a user can do — and
+       removing zoom outright would fail WCAG 1.4.4. */
+    touch-action: pinch-zoom;
+  }
+
+  .dpt-surface[hidden] {
+    display: none;
+  }
+
+  /* A mouse arrow parked on a black field is indistinguishable from a stuck
+     pixel. surface.ts flips this attribute after an idle delay. */
+  .dpt-surface[data-cursor="hidden"] {
+    cursor: none;
+  }
+</style>

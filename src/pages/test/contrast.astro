@@ -1,0 +1,515 @@
+---
+/**
+ * Contrast and black level test.
+ *
+ * Patch values are set as inline background-color, one hop from the hex in this
+ * file to the panel. No class indirection, no custom properties, nothing that
+ * could be transformed on the way.
+ *
+ * Hex labels default to OFF. A chip painted over a #010101 patch is far
+ * brighter than the patch itself, and its glare in a dark room is enough to
+ * stop the eye adapting — which is precisely what this test needs it to do.
+ * The labels exist so a user can name what they saw afterwards, not while
+ * judging.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import TestSurface from "../../components/test/TestSurface.astro";
+import TestHud from "../../components/test/TestHud.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Card from "../../components/site/Card.astro";
+import { getTest } from "../../lib/tests";
+import type { PatternDef } from "../../lib/patternRunner";
+
+const test = getTest("contrast");
+if (!test) throw new Error("Missing registry entry: contrast");
+
+const LIMITATION =
+  "A browser cannot measure luminance, so this page will never give you a contrast ratio — any site that prints one from inside a browser is inventing it. What you get here is a count of how many steps you can distinguish, which is a real and useful result but a perceptual one: it depends on your room lighting, how long your eyes have adapted, and your own vision. Run it in the dark, and compare panels rather than trusting a single number.";
+
+const NEAR_BLACK = [
+  "#000000",
+  "#010101",
+  "#020202",
+  "#040404",
+  "#080808",
+  "#0c0c0c",
+  "#101010",
+  "#181818",
+] as const;
+
+const NEAR_WHITE = [
+  "#ffffff",
+  "#fefefe",
+  "#fdfdfd",
+  "#fbfbfb",
+  "#f7f7f7",
+  "#f3f3f3",
+  "#efefef",
+  "#e7e7e7",
+] as const;
+
+/** 0 to 255 in steps of 16, plus 255 itself — 17 patches. */
+const FULL_RANGE = Array.from({ length: 17 }, (_, i) => {
+  const v = Math.min(i * 16, 255);
+  const h = v.toString(16).padStart(2, "0");
+  return `#${h}${h}${h}`;
+});
+
+/**
+ * ANSI-style 4x4 checkerboard. A real ANSI contrast measurement uses this
+ * arrangement because it forces the panel to produce black and white
+ * simultaneously, which any display with a global dimming backlight cannot do
+ * as well as it handles a full-screen black and a full-screen white in turn.
+ */
+const ANSI = Array.from({ length: 16 }, (_, i) => {
+  const row = Math.floor(i / 4);
+  const col = i % 4;
+  return (row + col) % 2 === 0 ? "#ffffff" : "#000000";
+});
+
+const PATTERNS: readonly PatternDef[] = [
+  {
+    id: "near-black",
+    name: "Near-black steps",
+    reveals:
+      "Count how many patches you can separate, starting from pure black on the left. Five or six in a dark room is a good result. If the first three or four are one solid block, that is black crush.",
+  },
+  {
+    id: "near-white",
+    name: "Near-white steps",
+    reveals:
+      "The same count at the top of the range. Merged patches here are highlight clipping — detail in bright skies and white shirts is being thrown away.",
+  },
+  {
+    id: "full-range",
+    name: "Full range, 17 steps",
+    reveals:
+      "The whole 0 to 255 sweep in steps of 16. Every boundary should be visible. Look for a stretch in the middle where several steps look identical, which indicates a gamma or lookup-table problem rather than clipping at the ends.",
+  },
+  {
+    id: "ansi",
+    name: "Simultaneous black and white",
+    reveals:
+      "Black and white at the same time. On a panel with local dimming or an aggressive dynamic-contrast mode the black squares here look far greyer than a full-screen black would — that is the panel cheating on its quoted contrast figure.",
+  },
+];
+---
+
+<TestPageLayout
+  title="Contrast & Black Level Test — Check for Black Crush and Clipping"
+  description="Free full-screen near-black and near-white step wedges for checking black crush, highlight clipping and gamma. Explains the RGB limited-versus-full range mismatch that causes most bad results, and how to fix it."
+  heading="Contrast and black level"
+  lede={test.description}
+  category="panel"
+  slug="contrast"
+  needsDarkRoom={true}
+  limitation={LIMITATION}
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel
+        label="Launch step wedges"
+        needsDarkRoom={true}
+        prerequisites={[
+          "Give your eyes at least two minutes in the dark before you judge the near-black patches. Adaptation is most of the result.",
+          "Turn off dynamic contrast, local dimming and any HDR mode. All three change the answer as you look at it.",
+          "Hex labels start hidden on purpose — a bright label beside a #010101 patch stops your eyes adapting. Turn them on only after you have counted.",
+        ]}
+      />
+
+      <section class="mt-12">
+        <Eyebrow as="h2">The measurement</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Counting steps is the whole test
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            There is no number to read here. The result is a count: how many
+            adjacent patches you can still tell apart before they merge into one
+            block. That count tells you where your display stops resolving
+            detail, which is the thing that actually affects what you see in a
+            dark film scene or a bright photograph.
+          </p>
+          <p>
+            <strong class="font-medium text-ink"
+              >On a decent IPS panel in a dark room</strong
+            > most people separate five or six of the eight near-black steps. The
+            gap between pure black and #010101 is genuinely hard &mdash; missing that
+            one is normal and not a fault. VA panels often do better at the
+            bottom; TN panels usually do worse.
+          </p>
+          <p>
+            <strong class="font-medium text-ink">A poor result</strong> is the
+            first three or four patches appearing completely identical. That is
+            black crush: everything below roughly 4% signal is being rendered as
+            the same black, and shadow detail is simply gone. The equivalent at
+            the top &mdash; white, #fefefe and #fdfdfd all indistinguishable &mdash;
+            is highlight clipping.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Most likely cause</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          It is usually settings, not a defect
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Before you conclude the panel is bad, work through these. Crushed
+            blacks are far more often a configuration problem, and every item
+            here is free to fix.
+          </p>
+          <ol class="flex flex-col gap-3">
+            <li>
+              <strong class="font-medium text-ink"
+                >1. RGB limited versus full range.</strong
+              > This is the single most common cause and it deserves naming directly.
+              HDMI carries either full range (0&ndash;255) or limited range (16&ndash;235).
+              If your GPU sends limited and the display expects full, everything below
+              16 is crushed to black and everything above 235 blows out to white
+              &mdash; and it looks exactly like a bad panel. Both NVIDIA and AMD control
+              panels expose an output dynamic range setting; Intel calls it quantisation
+              range. Set it to Full for a monitor. Change it, come back, and re-count.
+            </li>
+            <li>
+              <strong class="font-medium text-ink">2. Contrast set too high.</strong>
+              Above the factory default, the contrast control clips both ends of
+              the range rather than expanding it. Return it to the default and
+              adjust brightness instead.
+            </li>
+            <li>
+              <strong class="font-medium text-ink">3. Gamma or a picture preset.</strong>
+              Modes named Game, Vivid, Dynamic or Cinema commonly ship with a
+              gamma curve that deliberately crushes shadows for perceived punch.
+              Switch to Standard, sRGB or Custom.
+            </li>
+            <li>
+              <strong class="font-medium text-ink">4. Black level or brightness.</strong>
+              Some displays have a separate black-level or shadow-boost control,
+              often under a gaming menu. It is a blunt instrument, but it can
+              recover the bottom two or three steps.
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Simultaneous contrast</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Why the checkerboard is harder
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            A quoted contrast ratio is usually measured sequentially: a
+            full-screen white, then a full-screen black, one after the other.
+            That is generous to any display with a global backlight, which can
+            simply turn the light down for the black frame.
+          </p>
+          <p>
+            The 4&times;4 checkerboard demands both at once, which no global
+            dimming trick can help with. If the black squares here look
+            noticeably grey compared with a full-screen black &mdash; check that
+            on the
+            <a
+              href="/test/backlight-bleed"
+              class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+              >backlight bleed test</a
+            > &mdash; you are seeing the difference between the panel's marketing
+            figure and its real-world one. That difference is normal for LCD.
+            OLED, having no backlight to leak, shows almost none of it.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Patterns</Eyebrow>
+        <ol class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          {
+            PATTERNS.map((pattern, i) => (
+              <li>
+                <p class="font-medium text-ink">
+                  <span class="font-mono text-caption text-mute">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>{" "}
+                  {pattern.name}
+                </p>
+                <p class="mt-0.5">{pattern.reveals}</p>
+              </li>
+            ))
+          }
+        </ol>
+        <p class="mt-5 text-caption text-mute">
+          Arrow keys change pattern. <kbd
+            class="rounded-xs border border-hairline bg-canvas-soft-2 px-1 font-mono text-caption"
+            >Labels</kbd
+          > in the control bar reveals each patch's hex value once you have finished
+          counting.
+        </p>
+      </Card>
+    </aside>
+  </div>
+
+  <!-- The pattern list crosses from frontmatter to the client here rather than
+       being retyped in the module script below. -->
+  <script
+    slot="surface"
+    is:inline
+    type="application/json"
+    data-pattern-config
+    set:html={JSON.stringify(PATTERNS)}
+  />
+
+  <TestSurface slot="surface" id="surface">
+    <!-- Every grid is rendered up front and shown or hidden by CSS on the
+         surface's data-pattern attribute. Building them on demand would mean
+         a layout pass mid-test, and a reflow while the eye is dark-adapted is
+         itself a visible event. -->
+    <div
+      class="ctr-layer"
+      role="img"
+      aria-label="Full screen step wedge for judging black level and contrast"
+    >
+      <div class="ctr-grid ctr-grid--row" data-grid="near-black">
+        {
+          NEAR_BLACK.map((hex) => (
+            <div class="ctr-patch" style={`background-color:${hex}`}>
+              <span class="ctr-chip">{hex}</span>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="ctr-grid ctr-grid--row" data-grid="near-white">
+        {
+          NEAR_WHITE.map((hex) => (
+            <div class="ctr-patch" style={`background-color:${hex}`}>
+              <span class="ctr-chip ctr-chip--dark">{hex}</span>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="ctr-grid ctr-grid--row" data-grid="full-range">
+        {
+          FULL_RANGE.map((hex, i) => (
+            <div class="ctr-patch" style={`background-color:${hex}`}>
+              <span class:list={["ctr-chip", i > 8 && "ctr-chip--dark"]}>
+                {hex}
+              </span>
+            </div>
+          ))
+        }
+      </div>
+
+      <div class="ctr-grid ctr-grid--ansi" data-grid="ansi">
+        {
+          ANSI.map((hex) => (
+            <div class="ctr-patch" style={`background-color:${hex}`}>
+              <span
+                class:list={["ctr-chip", hex === "#ffffff" && "ctr-chip--dark"]}
+              >
+                {hex}
+              </span>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <TestHud slot="hud" label="Contrast pattern controls">
+      <p data-hud-note class="dpt-hud-note" hidden></p>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-nav-prev
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Previous pattern"
+        >
+          <span aria-hidden="true">&#9664;</span>
+        </button>
+        <span class="dpt-hud-label">
+          <b data-pattern-name>Near-black steps</b>
+          <span class="dpt-hud-sub" data-pattern-position>1 / 4</span>
+        </span>
+        <button
+          type="button"
+          data-nav-next
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Next pattern"
+        >
+          <span aria-hidden="true">&#9654;</span>
+        </button>
+      </div>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-hud-labels
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Labels
+        </button>
+        <button type="button" data-hud-help aria-pressed="false" class="dpt-hud-btn">
+          Help
+          <kbd class="dpt-hud-kbd">H</kbd>
+        </button>
+        <button type="button" data-surface-exit class="dpt-hud-btn">
+          Exit
+          <kbd class="dpt-hud-kbd">Esc</kbd>
+        </button>
+      </div>
+
+      <div data-help-panel hidden class="ctr-help">
+        <p data-pattern-reveals></p>
+        <p class="dpt-hud-sub">
+          Count from the darkest end inwards and stop where two patches stop
+          looking different. Keep the labels off until you have.
+        </p>
+      </div>
+
+      <p data-pattern-status role="status" aria-live="polite" class="ctr-sr"></p>
+    </TestHud>
+  </TestSurface>
+</TestPageLayout>
+
+<style>
+  .ctr-layer {
+    position: absolute;
+    inset: 0;
+    background-color: #000;
+  }
+
+  /* All four grids occupy the same box; only the active one is displayed. */
+  .ctr-grid {
+    position: absolute;
+    inset: 0;
+    display: none;
+    gap: 0;
+  }
+
+  .ctr-grid--row {
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+  }
+
+  .ctr-grid--ansi {
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(4, 1fr);
+  }
+
+  :global(.dpt-surface[data-pattern="near-black"]) [data-grid="near-black"],
+  :global(.dpt-surface[data-pattern="near-white"]) [data-grid="near-white"],
+  :global(.dpt-surface[data-pattern="full-range"]) [data-grid="full-range"],
+  :global(.dpt-surface[data-pattern="ansi"]) [data-grid="ansi"] {
+    display: grid;
+  }
+
+  .ctr-patch {
+    position: relative;
+    /* No border and no gap anywhere: a divider between two patches gives the
+       eye an edge to find, and the user would then be judging the divider
+       rather than whether the two greys actually differ. */
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding-bottom: 1.5rem;
+    min-width: 0;
+    min-height: 0;
+  }
+
+  /* ── Hex chips ───────────────────────────────────────────────────────────
+     Hidden by default via display:none rather than visibility or opacity.
+     opacity would put the chip through a compositing pass that the surface
+     contract forbids, and visibility:hidden would leave it occupying layout
+     where a future style change could make it paint. */
+  .ctr-chip {
+    display: none;
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    background-color: #000;
+    color: #fff;
+    font-family: var(--font-mono);
+    font-size: 0.6875rem;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  /* On light patches an all-black chip is the more legible pairing inverted. */
+  .ctr-chip--dark {
+    background-color: #fff;
+    color: #000;
+  }
+
+  :global(.dpt-surface[data-labels="on"]) .ctr-chip {
+    display: inline-block;
+  }
+
+  .ctr-help {
+    width: 100%;
+    max-width: 34rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .ctr-help[hidden] {
+    display: none;
+  }
+
+  .ctr-help p + p {
+    margin-top: 0.375rem;
+  }
+
+  .ctr-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  /* The HUD sits at the bottom, so on a short viewport it would cover the
+     bottom of the patches where the chips live. Lift the chips clear. */
+  @media (height < 500px) {
+    .ctr-patch {
+      align-items: center;
+      padding-bottom: 0;
+    }
+  }
+</style>
+
+<script>
+  import { mountPatternRunner, type PatternDef } from "../../lib/patternRunner";
+
+  const configEl = document.querySelector<HTMLScriptElement>(
+    "[data-pattern-config]",
+  );
+  if (configEl?.textContent) {
+    mountPatternRunner({
+      patterns: JSON.parse(configEl.textContent) as PatternDef[],
+    });
+  }
+
+  /* The labels toggle is specific to this page, so it is wired here rather than
+     in the shared runner. Default off — see the note in the frontmatter. */
+  const surface = document.getElementById("surface");
+  const labelsBtn = surface?.querySelector<HTMLElement>("[data-hud-labels]");
+
+  if (surface && labelsBtn) {
+    surface.dataset.labels = "off";
+    labelsBtn.addEventListener("click", () => {
+      const on = surface.dataset.labels !== "on";
+      surface.dataset.labels = on ? "on" : "off";
+      labelsBtn.setAttribute("aria-pressed", String(on));
+    });
+  }
+</script>

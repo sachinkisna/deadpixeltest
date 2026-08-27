@@ -1,0 +1,38 @@
+---
+/**
+ * AdSlot — a reserved, deliberately empty container.
+ *
+ * The site ships with no ads, no tracking and no cookie banner. This exists so
+ * that if advertising is ever added, the layout does not shift: the space is
+ * already accounted for, and there is one file to change rather than twenty
+ * templates.
+ *
+ * Renders nothing at all in production. It is NOT a placeholder box — an empty
+ * grey rectangle would be worse than no ad. The `debug` prop draws an outline
+ * during layout work only.
+ */
+interface Props {
+  /** Free-form slot identifier, e.g. "home-below-hero". */
+  id: string;
+  /** Reserved height so a future insert does not reflow content. */
+  minHeight?: string;
+  /** Draw a visible outline while working on layout. Never true in a commit. */
+  debug?: boolean;
+  class?: string | undefined;
+}
+
+const { id, minHeight, debug = false, class: className } = Astro.props;
+---
+
+<div
+  data-ad-slot={id}
+  aria-hidden="true"
+  style={minHeight ? `min-height:${minHeight}` : undefined}
+  class:list={[
+    debug &&
+      "flex items-center justify-center rounded-md border border-dashed border-hairline-strong font-mono text-caption text-mute",
+    className,
+  ]}
+>
+  {debug && id}
+</div>

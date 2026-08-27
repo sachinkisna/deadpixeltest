@@ -1,0 +1,504 @@
+---
+/**
+ * Viewing angle.
+ *
+ * Bespoke surface: a flat field plus nine identical reference patches at the
+ * corners, edge midpoints and centre. Identical patches should look identical.
+ * Where they do not, you are seeing either the panel technology's off-axis
+ * behaviour or the geometry of your own seat — the page's job is to help the
+ * reader tell those apart, because neither is a defect.
+ *
+ * Every patch is the same colour, one step from the field, so the patch/field
+ * boundary contrast is identical in all nine places. That is the whole trick: a
+ * difference between two patches cannot be blamed on the patches.
+ *
+ * The patch layer's colour and its show/hide toggle are wired in this page's own
+ * `<script>`, not in `lib/fieldRunner.ts` — no other test has patches, and the
+ * shared module stays a flat-field driver.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import TestSurface from "../../components/test/TestSurface.astro";
+import TestHud from "../../components/test/TestHud.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Card from "../../components/site/Card.astro";
+import { getFill } from "../../lib/palette";
+import { getTest } from "../../lib/tests";
+
+const test = getTest("viewing-angle");
+if (!test) throw new Error("Missing registry entry: viewing-angle");
+
+/**
+ * Not in FILLS: a mid skin tone is not a diagnostic fill, but it is the colour
+ * people actually notice shifting off-axis, so it earns a place here.
+ */
+const SKIN = { slug: "skin", name: "Skin tone", hex: "#c08060" } as const;
+
+/** Field order. Mirrored by the `<script>` below, which adds the copy. */
+const fields = [
+  ...(["grey-50", "grey-25", "white"] as const).map((slug) => {
+    const fill = getFill(slug);
+    if (!fill) throw new Error(`Missing fill: ${slug}`);
+    return { slug: fill.slug, name: fill.name, hex: fill.hex };
+  }),
+  SKIN,
+];
+
+const first = fields[0];
+if (!first) throw new Error("viewing-angle: empty field list");
+
+/**
+ * Initial patch colour: mid grey stepped up by 26 per channel, the same sum the
+ * `patchHex()` helper in the script below performs for every field on launch.
+ */
+const FIRST_PATCH = "#9a9a9a";
+
+/** Percentage stops for the 3x3 arrangement: corners, edge midpoints, centre. */
+const STOPS = [10, 50, 90] as const;
+const PATCHES = STOPS.flatMap((top) => STOPS.map((left) => ({ top, left })));
+
+const TECH = [
+  {
+    term: "TN",
+    body: "Severe gamma shift on the vertical axis. The top and bottom patches will differ from the centre with your head perfectly still, and looking up at the screen from below inverts colours outright. If you see that, you have a TN panel — the test has identified your panel technology.",
+  },
+  {
+    term: "IPS",
+    body: "Good angles in every direction, with a silvery glow washing over the corners instead. Patches hold their value; the field around them lightens off-axis.",
+  },
+  {
+    term: "VA",
+    body: "Strong contrast falloff and a black crush that moves as you do, plus a visible gamma shift on any off-axis movement — vertical or horizontal. Dark grey is the field that exposes it.",
+  },
+  {
+    term: "OLED",
+    body: "Near-perfect angles, since each pixel emits its own light. At extreme angles many panels pick up a slight colour tint from the microlens or filter stack, most visible on white.",
+  },
+] as const;
+---
+
+<TestPageLayout
+  title="Viewing Angle Test — Reference Patches for Off-Axis Colour Shift"
+  description="Nine identical reference patches across the screen. If they do not look identical, your panel shifts off-axis. Explains what TN, IPS, VA and OLED each do, and why the 178° figure on the box means very little."
+  heading="Viewing angle test"
+  lede="Nine identical patches, placed corner to corner. Anywhere they stop looking identical, something between your eye and the panel is changing the colour."
+  category="panel"
+  slug={test.slug}
+  limitation="What you see here is your own viewing geometry, not a panel specification. The 178° figures printed on monitor boxes are measured at the angle where contrast ratio falls to 10:1 — a far lower bar than 'still looks the same', which is why a panel rated 178° can visibly shift at 20°. This test cannot produce a number comparable to that one, and it does not try to."
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel
+        label="Launch reference patches"
+        prerequisites={[
+          "Sit centred and square to the screen, at your normal distance.",
+          "Keep your head still for the first look — that measurement matters on its own.",
+          "No dark room needed. Judge this in the light you normally work in.",
+        ]}
+      />
+
+      <section class="mt-12">
+        <Eyebrow as="h2">What it shows</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">Nine patches, one colour</h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            The surface paints a flat field, then places nine small squares on
+            top of it: four corners, four edge midpoints, one centre. Every
+            square is the same colour, one step from the field behind it, so the
+            step between patch and field is identical in all nine positions. If
+            two patches look different, the difference is not in the patches.
+          </p>
+          <p>
+            That construction matters, because the usual way people judge viewing
+            angle &mdash; look at a photograph, move around &mdash; gives you no
+            reference at all. A face that shifts as you lean might be the panel
+            or might be the picture. Nine known-identical squares remove the
+            guesswork, and the
+            <strong class="font-medium text-ink">Patches</strong> button hides
+            them so you can check the bare field whenever you want a second look.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">How to read it</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Start with your head completely still
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Sit centred and do not move. Compare the top and bottom patches
+            against the centre one. On a good IPS or OLED panel they will match
+            closely enough that you have to hunt for a difference. On a TN panel
+            the top row will look washed out and the bottom row darker, or the
+            reverse, with no movement from you at all &mdash; the vertical gamma
+            curve is simply that steep. That single observation tells you which
+            technology you bought.
+          </p>
+          <p>
+            Then move. Lean left and right, stand up, crouch down, and watch what
+            each patch does. You are looking for how quickly the panel gives up:
+            whether tone shifts gradually or collapses at a certain point,
+            whether colours tint, and whether anything inverts.
+          </p>
+        </div>
+        <dl class="mt-5 flex flex-col gap-4">
+          {
+            TECH.map((item) => (
+              <div>
+                <dt class="text-body-md font-medium text-ink">{item.term}</dt>
+                <dd class="mt-1 text-body-md text-body">{item.body}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Geometry</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Some difference is your seat, not your screen
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            On a large or curved panel, a centre-to-edge difference is partly
+            unavoidable. The far edges of a 34-inch ultrawide are genuinely at a
+            different angle to your eye than the centre is &mdash; twenty degrees
+            or more &mdash; so you are not comparing nine patches viewed
+            identically. You are comparing nine patches viewed from nine slightly
+            different angles. A curve reduces that; it does not remove it.
+          </p>
+          <p>
+            To separate geometry from panel behaviour, move your chair so that a
+            corner patch is directly in front of you and look at it straight on.
+            If it now matches what the centre patch looked like, the difference
+            was geometric and there is nothing wrong. If it still looks wrong
+            when viewed dead on, the panel is not uniform in the way the
+            <a
+              href="/test/uniformity"
+              class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+              >uniformity test</a
+            > covers.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">What to do</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Mostly a characteristic, occasionally a fault
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Off-axis shift is a property of the technology, so it is almost never
+            a warranty matter. A TN panel that shifts vertically is a TN panel
+            working correctly, and it will not be replaced with anything better
+            than another one. The useful outcome here is knowing what you have:
+            if you colour-grade, or share the screen with someone sitting beside
+            you, or use a big panel up close, that shift is a reason to buy IPS or
+            OLED next time rather than a reason to file a claim.
+          </p>
+          <p>
+            Two results are worth acting on. One patch that is permanently
+            discoloured or dimmed and does
+            <em class="text-ink not-italic">not</em> change as you move is a
+            panel fault, not an angle effect &mdash; check it against uniformity
+            and backlight bleed. And a shift so severe that text is unreadable at
+            the edges of a screen you sit squarely in front of is not normal for
+            any current panel, and is worth raising inside the return window.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Identify the panel</Eyebrow>
+        <ul class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          <li>
+            <span class="font-medium text-ink">Top and bottom differ, head still</span>
+            &rarr; TN
+          </li>
+          <li>
+            <span class="font-medium text-ink">Corners glow, patches hold</span>
+            &rarr; IPS
+          </li>
+          <li>
+            <span class="font-medium text-ink">Contrast collapses off-axis</span>
+            &rarr; VA
+          </li>
+          <li>
+            <span class="font-medium text-ink">Stable until extreme angles</span>
+            &rarr; OLED
+          </li>
+          <li class="border-t border-hairline pt-3 text-mute">
+            None of these is a defect. A patch that never changes as you move is
+            a different matter.
+          </li>
+        </ul>
+      </Card>
+
+      <div class="mt-6">
+        <Eyebrow as="h2">The four fields</Eyebrow>
+        <ul class="mt-3 flex flex-col gap-2">
+          {
+            fields.map((field) => (
+              <li class="flex items-center gap-2 text-body-sm text-body">
+                <span
+                  class="size-3.5 shrink-0 rounded-xs shadow-e1"
+                  style={`background-color:${field.hex}`}
+                  aria-hidden="true"
+                />
+                {field.name}
+                <span class="ml-auto font-mono text-code text-mute uppercase">
+                  {field.hex}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <TestSurface slot="surface" id="surface">
+    <div
+      class="dpt-fill"
+      data-field-layer
+      data-field-id={first.slug}
+      role="img"
+      aria-label={`Full screen ${first.name} field`}
+      style={`background-color:${first.hex}`}
+    >
+    </div>
+
+    <!-- Nine identical patches. aria-hidden: they carry no information a screen
+         reader can act on, and the HUD status line describes the field instead. -->
+    <div class="va-patches" aria-hidden="true">
+      {
+        PATCHES.map((patch) => (
+          <span
+            class="va-patch"
+            data-patch
+            style={`top:${patch.top}%;left:${patch.left}%;background-color:${FIRST_PATCH}`}
+          />
+        ))
+      }
+    </div>
+
+    <TestHud slot="hud" label="Viewing angle controls">
+      <p data-hud-note class="dpt-hud-note" hidden></p>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-nav-prev
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Previous field"
+        >
+          <span aria-hidden="true">&#9664;</span>
+        </button>
+        <span class="dpt-hud-label">
+          <b data-field-name>{first.name}</b>
+          <span class="dpt-hud-sub" data-field-position>1 / {fields.length}</span>
+        </span>
+        <button
+          type="button"
+          data-nav-next
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Next field"
+        >
+          <span aria-hidden="true">&#9654;</span>
+        </button>
+      </div>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-patch-toggle
+          aria-pressed="true"
+          class="dpt-hud-btn"
+        >
+          Patches
+        </button>
+        <button
+          type="button"
+          data-hud-help
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Help
+          <kbd class="dpt-hud-kbd">H</kbd>
+        </button>
+        <button type="button" data-surface-exit class="dpt-hud-btn">
+          Exit
+          <kbd class="dpt-hud-kbd">Esc</kbd>
+        </button>
+      </div>
+
+      <div data-help-panel hidden class="va-help">
+        <p data-field-reveals></p>
+        <p class="dpt-hud-sub">
+          All nine patches are the same colour. Compare top and bottom against
+          the centre with your head still, then move.
+        </p>
+        <p class="dpt-hud-sub">
+          <kbd class="dpt-hud-kbd">&larr;</kbd>
+          <kbd class="dpt-hud-kbd">&rarr;</kbd> change field &middot;
+          <kbd class="dpt-hud-kbd">H</kbd> help &middot;
+          <kbd class="dpt-hud-kbd">Esc</kbd> exit
+        </p>
+      </div>
+
+      <p data-field-status role="status" aria-live="polite" class="va-sr"></p>
+    </TestHud>
+  </TestSurface>
+</TestPageLayout>
+
+<style>
+  .va-patches {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+  }
+
+  /* The page script flips data-patches on the surface, which is rendered by
+     TestSurface and so carries no scope hash of this page's. */
+  :global(.dpt-surface[data-patches="off"]) .va-patches {
+    display: none;
+  }
+
+  .va-patch {
+    --patch-size: clamp(56px, 9vmin, 120px);
+    position: absolute;
+    display: block;
+    width: var(--patch-size);
+    height: var(--patch-size);
+    /* Negative margins rather than a translate: a transform would promote the
+       patch to its own composited layer and can resample its edges, and this
+       square is the thing under measurement. */
+    margin-top: calc(var(--patch-size) / -2);
+    margin-left: calc(var(--patch-size) / -2);
+  }
+
+  .va-help {
+    width: 100%;
+    max-width: 34rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .va-help[hidden] {
+    display: none;
+  }
+
+  .va-help p + p {
+    margin-top: 0.375rem;
+  }
+
+  .va-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { mountFieldRunner, type FieldDef } from "../../lib/fieldRunner";
+  import { getFill } from "../../lib/palette";
+
+  /** Channel step between field and patch. Small enough to need real judgement. */
+  const PATCH_STEP = 26;
+
+  /**
+   * The patch colour: the field, one step lighter.
+   *
+   * The direction is decided once for the whole colour rather than per channel.
+   * Stepping one channel up and another down would tint the patch relative to
+   * the field, and a hue difference is exactly what this test asks the user to
+   * look for. White has nowhere lighter to go, so it steps down instead.
+   */
+  const patchHex = (hex: string): string => {
+    const n = Number.parseInt(hex.slice(1), 16);
+    const rgb = [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+    const delta = rgb.every((v) => v + PATCH_STEP <= 255)
+      ? PATCH_STEP
+      : -PATCH_STEP;
+    return `#${rgb.map((v) => (v + delta).toString(16).padStart(2, "0")).join("")}`;
+  };
+
+  const fromFill = (slug: string, reveals: string): FieldDef[] => {
+    const fill = getFill(slug);
+    return fill
+      ? [{ id: fill.slug, name: fill.name, hex: fill.hex, reveals }]
+      : [];
+  };
+
+  const fields: FieldDef[] = [
+    ...fromFill(
+      "grey-50",
+      "Mid grey is the most sensitive field for gamma shift. Compare the top and bottom patches with the centre before you move your head at all.",
+    ),
+    ...fromFill(
+      "grey-25",
+      "Dark grey exposes VA black crush and contrast falloff. Watch whether the patch/field boundary disappears entirely as you move off-axis.",
+    ),
+    ...fromFill(
+      "white",
+      "White shows tint rather than gamma. Look for one region running warmer or cooler than the rest, which on OLED often appears only at extreme angles.",
+    ),
+    {
+      id: "skin",
+      name: "Skin tone",
+      hex: "#c08060",
+      reveals:
+        "A mid skin tone is where off-axis shift becomes obvious in practice. If the corner patches look a different colour rather than a different brightness, faces will shift too.",
+    },
+  ];
+
+  const surfaceEl = document.getElementById("surface");
+
+  if (surfaceEl) {
+    // Rebound to an explicitly-typed const: narrowing from the guard does not
+    // survive into anything declared below it.
+    const surface: HTMLElement = surfaceEl;
+    const patches = Array.from(
+      surface.querySelectorAll<HTMLElement>("[data-patch]"),
+    );
+    const toggle = surface.querySelector<HTMLElement>("[data-patch-toggle]");
+    const statusEl = surface.querySelector<HTMLElement>("[data-field-status]");
+
+    let patchesOn = true;
+
+    const setPatches = (on: boolean): void => {
+      patchesOn = on;
+      surface.dataset.patches = on ? "on" : "off";
+      toggle?.setAttribute("aria-pressed", String(on));
+      if (statusEl) {
+        statusEl.textContent = on
+          ? "Reference patches shown."
+          : "Reference patches hidden. The field is now bare.";
+      }
+    };
+
+    toggle?.addEventListener("click", () => setPatches(!patchesOn));
+
+    // Patches start visible: they are the test, not an overlay on it.
+    surface.dataset.patches = "on";
+
+    mountFieldRunner({
+      fields,
+      onChange: (field) => {
+        // Recomputed per field so the patch/field step stays constant.
+        const hex = patchHex(field.hex);
+        for (const patch of patches) patch.style.backgroundColor = hex;
+      },
+    });
+  }
+</script>

@@ -1,0 +1,43 @@
+---
+/**
+ * MeshGradient — the brand's entire decorative system.
+ *
+ * DESIGN.md constraints, enforced by this component existing at all:
+ *   · hero scale ONLY — never miniaturised to an icon or a swatch
+ *   · treated as one object — stops are never reordered or reduced to a
+ *     single colour
+ *
+ * Rendered decorative and aria-hidden: it carries no information.
+ *
+ * The blur is applied to THIS element only. It must never wrap a diagnostic
+ * surface, since a filter would alter the pixels under test.
+ */
+interface Props {
+  class?: string | undefined;
+  /** Opacity of the gradient wash. Kept low so ink text stays legible. */
+  intensity?: "subtle" | "full";
+}
+
+const { class: className, intensity = "subtle" } = Astro.props;
+---
+
+<div
+  aria-hidden="true"
+  class:list={[
+    "pointer-events-none absolute inset-0 overflow-hidden",
+    className,
+  ]}
+>
+  <div
+    class:list={[
+      "mesh-gradient absolute -inset-x-1/4 -top-1/2 h-[140%] blur-[90px] saturate-150",
+      intensity === "subtle" ? "opacity-25" : "opacity-45",
+    ]}
+  >
+  </div>
+  <!-- Fades the wash into the canvas so the band has no hard edge. -->
+  <div
+    class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-b from-transparent to-canvas-soft"
+  >
+  </div>
+</div>

@@ -1,0 +1,165 @@
+---
+/**
+ * Single-colour fill pages — /test/white, /test/black, /test/red …
+ *
+ * One route generates all twelve. Each gets its own copy explaining what that
+ * specific fill reveals, because "here is a red screen" is not a reason for
+ * someone to trust the result they are about to record.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import FillSurface from "../../components/test/FillSurface.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Button from "../../components/site/Button.astro";
+import Card from "../../components/site/Card.astro";
+import { FILLS, getFill, sequenceFills } from "../../lib/palette";
+import type { GetStaticPaths } from "astro";
+
+export const getStaticPaths = (() =>
+  FILLS.map((fill) => ({
+    params: { color: fill.slug },
+    props: { slug: fill.slug },
+  }))) satisfies GetStaticPaths;
+
+const { slug } = Astro.props;
+const fill = getFill(slug);
+if (!fill) throw new Error(`Unknown fill: ${slug}`);
+
+// The surface cycles the guided order rather than the declaration order, so
+// arrow keys walk light-to-dark exactly as the sequence does.
+const ordered = sequenceFills();
+const startIndex = Math.max(
+  0,
+  ordered.findIndex((f) => f.slug === fill.slug),
+);
+
+const isDark = fill.ink === "light";
+---
+
+<TestPageLayout
+  title={`${fill.name} Screen Test (${fill.hex}) — Full Screen Dead Pixel Test`}
+  description={`Fill your screen with pure ${fill.name.toLowerCase()} (${fill.hex}) to check for dead and stuck pixels. Exact sRGB, no video compression, works on mobile and desktop.`}
+  heading={`${fill.name} screen test`}
+  lede={fill.reveals}
+  category="pixels"
+  slug="colors"
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel label={`Fill screen with ${fill.name.toLowerCase()}`} />
+
+      <section class="mt-12">
+        <Eyebrow as="h2">How to read it</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          What a fault looks like on {fill.name.toLowerCase()}
+        </h2>
+
+        <div class="mt-4 flex flex-col gap-4 text-body-md text-body">
+          <p>{fill.reveals}</p>
+          {
+            isDark ? (
+              <p>
+                On a dark fill you are hunting for something too bright. Any dot
+                that glows &mdash; white, red, green, blue, or a mix &mdash; is a
+                sub-pixel stuck in the on position. Move your head slightly: a
+                real fault stays locked to the same spot on the panel, while a
+                reflection or a smear moves with you.
+              </p>
+            ) : (
+              <p>
+                On a light fill you are hunting for something too dark. A
+                permanently black dot is a dead pixel, which receives no power at
+                all. Before you record it, wipe that spot with a dry cloth &mdash;
+                dust and dried spray are responsible for most reported dead
+                pixels.
+              </p>
+            )
+          }
+          <p>
+            Get close. At normal viewing distance a single faulty pixel on a
+            27-inch 4K panel is roughly the size of a full stop in this sentence.
+            Work across the screen in strips rather than scanning randomly, and
+            pay extra attention to the corners, where people habitually stop
+            looking.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Next</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          One colour is not a complete check
+        </h2>
+        <p class="mt-3 text-body-md text-body">
+          A sub-pixel can be dead in one channel and healthy in the other two. It
+          will hide on some fills and show on others, which is why a real check
+          walks all twelve. The guided sequence does that in order and records
+          what you find.
+        </p>
+        <div class="mt-5">
+          <Button href="/test/sequence" shape="pill">
+            Run the guided sequence
+          </Button>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">This fill</Eyebrow>
+        <dl class="mt-4 flex flex-col gap-3 text-body-sm">
+          <div class="flex items-center justify-between gap-4">
+            <dt class="text-mute">Colour</dt>
+            <dd class="flex items-center gap-2 text-ink">
+              <span
+                class="size-4 rounded-xs shadow-e1"
+                style={`background-color:${fill.hex}`}
+                aria-hidden="true"></span>
+              {fill.name}
+            </dd>
+          </div>
+          <div class="flex items-center justify-between gap-4">
+            <dt class="text-mute">sRGB hex</dt>
+            <dd class="font-mono text-code text-ink uppercase">{fill.hex}</dd>
+          </div>
+        </dl>
+      </Card>
+
+      <nav aria-label="All fills" class="mt-6">
+        <Eyebrow as="h2">All twelve fills</Eyebrow>
+        <ul class="mt-3 grid grid-cols-2 gap-2">
+          {
+            ordered.map((f) => (
+              <li>
+                <a
+                  href={`/test/${f.slug}`}
+                  aria-current={f.slug === fill.slug ? "page" : undefined}
+                  class:list={[
+                    "flex items-center gap-2 rounded-sm px-2 py-1.5 text-body-sm transition-colors duration-150 ease-out",
+                    f.slug === fill.slug
+                      ? "bg-canvas-soft-2 text-ink"
+                      : "text-body hover:bg-canvas-soft-2 hover:text-ink",
+                  ]}
+                >
+                  <span
+                    class="size-3.5 shrink-0 rounded-xs shadow-e1"
+                    style={`background-color:${f.hex}`}
+                    aria-hidden="true"
+                  />
+                  {f.name}
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </nav>
+    </aside>
+  </div>
+
+  <FillSurface slot="surface" fills={ordered} startIndex={startIndex} />
+</TestPageLayout>
+
+<script>
+  import { mountFillRunner } from "../../lib/fillRunner";
+  mountFillRunner();
+</script>

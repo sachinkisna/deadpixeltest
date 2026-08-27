@@ -1,0 +1,119 @@
+---
+/**
+ * TestPageLayout — the shared shell for all thirteen test pages.
+ *
+ * Each test page is a real content page: an explanation of what the test shows,
+ * how to read the result, and what to do about a fault. That content is the
+ * reason these pages can rank at all — a bare full-screen fill has nothing for
+ * a search engine to index and nothing for a user who does not yet know what
+ * they are looking at.
+ *
+ * The diagnostic overlay goes in the `surface` slot, which renders *outside*
+ * `<main>` so a `position: fixed` overlay never inherits the content column's
+ * padding or max-width.
+ */
+import SiteLayout from "./SiteLayout.astro";
+import Eyebrow from "../components/site/Eyebrow.astro";
+import Badge from "../components/site/Badge.astro";
+import Card from "../components/site/Card.astro";
+import { CATEGORY_LABEL, TESTS, type TestCategory } from "../lib/tests";
+
+export interface Props {
+  /** <title> and OG title. */
+  title: string;
+  description: string;
+  /** On-page h1. Usually shorter than the <title>. */
+  heading: string;
+  /** One or two sentences under the h1. */
+  lede: string;
+  category: TestCategory;
+  /** Slug of this test, so it is excluded from the related list. */
+  slug: string;
+  needsDarkRoom?: boolean;
+  /** Rendered verbatim as a prominent limitation notice. */
+  limitation?: string;
+  noindex?: boolean;
+}
+
+const {
+  title,
+  description,
+  heading,
+  lede,
+  category,
+  slug,
+  needsDarkRoom = false,
+  limitation,
+  noindex = false,
+} = Astro.props;
+
+// Same category first, then anything else, capped at six.
+const related = [
+  ...TESTS.filter((t) => t.category === category && t.slug !== slug),
+  ...TESTS.filter((t) => t.category !== category && t.slug !== slug),
+].slice(0, 6);
+---
+
+<SiteLayout {title} {description} {noindex} bleed>
+  <slot name="head" slot="head" />
+
+  <article>
+    <header class="border-b border-hairline bg-canvas">
+      <div class="mx-auto max-w-page px-4 pt-10 pb-12 md:px-6 md:pt-14">
+        <nav aria-label="Breadcrumb" class="mb-6">
+          <ol class="flex flex-wrap items-center gap-2 text-caption text-mute">
+            <li><a href="/" class="hover:text-ink">Home</a></li>
+            <li aria-hidden="true">/</li>
+            <li><a href="/tests" class="hover:text-ink">Tests</a></li>
+            <li aria-hidden="true">/</li>
+            <li aria-current="page" class="text-body">{heading}</li>
+          </ol>
+        </nav>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <Eyebrow>{CATEGORY_LABEL[category]}</Eyebrow>
+          {needsDarkRoom && <Badge tone="warning">Dark room needed</Badge>}
+        </div>
+
+        <h1 class="mt-3 max-w-3xl text-display-lg text-ink">{heading}</h1>
+        <p class="mt-4 max-w-prose text-body-lg text-body">{lede}</p>
+      </div>
+    </header>
+
+    <div class="mx-auto max-w-page px-4 py-12 md:px-6">
+      {
+        limitation && (
+          <aside
+            aria-label="Limitations of this test"
+            class="mb-10 max-w-prose rounded-lg border border-warning bg-warning-soft p-5"
+          >
+            <p class="text-body-sm font-medium text-warning-deep">
+              What this test cannot tell you
+            </p>
+            <p class="mt-2 text-body-sm text-warning-deep">{limitation}</p>
+          </aside>
+        )
+      }
+
+      <slot />
+
+      <section class="mt-16 border-t border-hairline pt-12">
+        <Eyebrow as="h2">Other tests</Eyebrow>
+        <ul class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            related.map((test) => (
+              <li>
+                <Card href={test.href} elevation="e1" padding="md" class="h-full">
+                  <p class="text-body-sm font-medium text-ink">{test.name}</p>
+                  <p class="mt-1 text-caption text-body">{test.blurb}</p>
+                </Card>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </div>
+  </article>
+
+  <slot name="surface" slot="surface" />
+</SiteLayout>

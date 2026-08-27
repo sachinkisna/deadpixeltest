@@ -1,0 +1,161 @@
+---
+import GuideLayout from "../../layouts/GuideLayout.astro";
+import Card from "../../components/site/Card.astro";
+---
+
+<GuideLayout
+  title="Dead Pixel vs Stuck Pixel — How to Tell Them Apart"
+  description="A dead pixel receives no power and stays black on every fill. A stuck sub-pixel is powered but jammed, so it shows as a coloured dot on black and can sometimes be freed. How to tell which you have, and how to rule out dust."
+  heading="Dead pixel vs stuck pixel"
+  lede="They look similar in a photograph and behave completely differently in practice. One is permanent; the other is sometimes fixable in a few minutes. Three fills will tell you which you have."
+  updated="2026-08-27"
+  slug="dead-vs-stuck-pixel"
+>
+  <Card surface="soft" elevation="e1" padding="lg">
+    <p class="text-body-sm font-medium text-ink">In short</p>
+    <p class="mt-2 text-body-sm text-body">
+      A <strong>dead</strong> pixel gets no power at all, so it stays black on
+      every colour &mdash; including white &mdash; and no software can revive it.
+      A <strong>stuck</strong> sub-pixel is powered but jammed in one state, so
+      it appears as a coloured dot against black and can sometimes be freed by
+      rapid colour cycling. View <a href="/test/white">white</a>, then
+      <a href="/test/black">black</a>: black-on-white means dead, coloured-on-black
+      means stuck.
+    </p>
+  </Card>
+
+  <h2>What is physically different</h2>
+  <p>
+    Every pixel on an LCD or OLED panel is three sub-pixels &mdash; one red, one
+    green, one blue &mdash; each driven by its own thin-film transistor. Nearly
+    every fault you will ever see is a failure of one of those transistors, and
+    it fails in one of two ways.
+  </p>
+  <p>
+    A <strong>dead</strong> pixel&rsquo;s transistor receives no power. It cannot
+    be told to do anything, so it renders nothing, so it is black regardless of
+    what the rest of the screen is doing. That is why white is the fill that
+    finds it: against a bright field a black dot is obvious, and against black it
+    is invisible. There is no software fix, because there is nothing to send a
+    signal to.
+  </p>
+  <p>
+    A <strong>stuck</strong> sub-pixel is the opposite: it is powered, but its
+    transistor is jammed at one value and stops responding to changes. It shows
+    as a small coloured dot &mdash; red, green, blue, or a mix &mdash; and it is
+    most visible on black, because that is the one fill where the rest of the
+    screen is dark and it is not. Because the circuit is live, rapidly exercising
+    it sometimes unsticks it. That is what the
+    <a href="/fixer">stuck pixel fixer</a> does.
+  </p>
+  <p>
+    A <strong>hot</strong> pixel is the extreme case of stuck: all three
+    sub-pixels jammed on, so the pixel is permanently white. On a black field it
+    is the brightest thing on the screen. Hot pixels rarely respond to cycling.
+  </p>
+
+  <h2>Most &ldquo;dead pixels&rdquo; are dead sub-pixels</h2>
+  <p>
+    This is the single most common misreading. If one sub-pixel of three fails
+    dark, the pixel still lights &mdash; just with a channel missing. A pixel
+    with a dead red sub-pixel shows cyan where it should show white. So it reads
+    as a faint <em>coloured</em> dot on a white field, not a black one, and it is
+    far more common than a genuinely dead whole pixel. If you see a tinted dot on
+    white, count the channels rather than assuming the worst.
+  </p>
+
+  <h2>The decision procedure</h2>
+  <ol>
+    <li>
+      <a href="/test/white">View white</a>. Anything dark here is losing a
+      channel or all three.
+    </li>
+    <li>
+      <a href="/test/black">View black</a>. Anything bright here is stuck on.
+    </li>
+    <li>
+      View each primary in turn &mdash; <a href="/test/red">red</a>,
+      <a href="/test/green">green</a>, <a href="/test/blue">blue</a> &mdash; to
+      identify <em>which</em> sub-pixel is at fault. A dot that stays dark on red
+      but lights on green and blue has a dead red sub-pixel.
+    </li>
+  </ol>
+  <p>
+    The <a href="/test/sequence">guided run</a> walks all twelve fills in this
+    order and logs where you tap, which is worth doing if you might need the
+    evidence later.
+  </p>
+
+  <div class="guide-table">
+    <table>
+      <caption>How each fault reads on each fill</caption>
+      <thead>
+        <tr>
+          <th scope="col">Fault</th>
+          <th scope="col">On white</th>
+          <th scope="col">On black</th>
+          <th scope="col">On red / green / blue</th>
+          <th scope="col">Fixable?</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row">Dead pixel</th>
+          <td>Black dot</td>
+          <td>Invisible</td>
+          <td>Black on all three</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <th scope="row">Dead sub-pixel</th>
+          <td>Faintly tinted dot</td>
+          <td>Invisible</td>
+          <td>Black on one, normal on the other two</td>
+          <td>No</td>
+        </tr>
+        <tr>
+          <th scope="row">Stuck sub-pixel</th>
+          <td>Usually invisible</td>
+          <td>Coloured dot</td>
+          <td>Bright on its own colour, coloured on the others</td>
+          <td>Sometimes</td>
+        </tr>
+        <tr>
+          <th scope="row">Hot pixel</th>
+          <td>Invisible</td>
+          <td>White dot</td>
+          <td>White on all three</td>
+          <td>Rarely</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h2>Two things that are not pixel faults</h2>
+  <p>
+    <strong>Dust or a smudge on the surface.</strong> It sits on top of the glass,
+    so it sits on top of the reflection rather than inside the image, it usually
+    has a soft irregular edge, and it moves or disappears when you wipe with a
+    dry microfibre cloth. Check this before anything else &mdash; it is the
+    commonest false alarm, and it costs nothing to rule out.
+  </p>
+  <p>
+    <strong>A bright spot under the polariser.</strong> Debris trapped inside the
+    panel stack, or a pressure mark, produces a pale blob that does not move when
+    wiped. Tell it from a pixel fault by shape and scale: a stuck or hot pixel is
+    hard-edged and exactly one pixel across, so it stays crisp as you lean in,
+    while a polariser defect is a slightly larger fuzzy patch with no sharp
+    boundary. Neither responds to colour cycling, but they are described
+    differently in a warranty claim, so the distinction is worth making.
+  </p>
+
+  <h2>What to do next</h2>
+  <p>
+    If it is stuck, try the <a href="/fixer">fixer</a> &mdash; it costs a few
+    minutes and occasionally works. If it is dead, or if cycling does nothing,
+    the question becomes whether the panel qualifies for a return or a claim.
+    Record the faults with the <a href="/test/sequence">guided run</a>, then read
+    <a href="/guides/dead-pixel-warranty-policies">how to find the warranty
+    policy that actually applies</a>.
+  </p>
+</GuideLayout>

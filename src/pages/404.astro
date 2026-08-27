@@ -1,0 +1,128 @@
+---
+/**
+ * 404.
+ *
+ * Deliberately not jokey. Someone landing here is usually mid-task with a new
+ * monitor in front of them, and a pun about missing pixels wastes the one screen
+ * they did not ask for. So: say what happened in one line, then give every
+ * useful destination — including the twelve fills, since a mistyped
+ * /test/<colour> URL is the likeliest way to arrive here.
+ */
+import SiteLayout from "../layouts/SiteLayout.astro";
+import Card from "../components/site/Card.astro";
+import Eyebrow from "../components/site/Eyebrow.astro";
+import Button from "../components/site/Button.astro";
+import { FILLS } from "../lib/palette";
+import { TESTS } from "../lib/tests";
+
+const destinations = [
+  {
+    href: "/test/sequence",
+    title: "Guided pixel test",
+    body: "Twelve full-screen fills in order, with a defect log as you go. Start here if you are checking a new screen.",
+  },
+  {
+    href: "/tests",
+    title: `All ${TESTS.length} tests`,
+    body: "The full index: pixel faults, panel quality, motion and signal, grouped by what each one tells you.",
+  },
+  {
+    href: "/",
+    title: "Home",
+    body: "The overview, plus a one-click route into a full-screen white field.",
+  },
+];
+---
+
+<SiteLayout
+  title="Page not found — Dead Pixel Test"
+  description="That page does not exist on Dead Pixel Test. Here are the guided screen test, the full test index and the twelve single colour fills."
+  noindex
+  bleed
+>
+  <!-- ── Header ────────────────────────────────────────────────────────── -->
+  <header class="border-b border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 pt-12 pb-14 md:px-6 md:pt-16">
+      <Eyebrow>404</Eyebrow>
+      <h1 class="mt-3 max-w-3xl text-display-lg text-ink">
+        This page does not exist.
+      </h1>
+      <p class="mt-4 max-w-prose text-body-lg text-body">
+        Nothing is broken on your screen and nothing is broken on the site
+        &mdash; the address is just wrong or out of date. Everything worth going
+        to is below.
+      </p>
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Button href="/test/sequence" size="lg" shape="pill">
+          Start the guided test
+        </Button>
+        <Button href="/tests" size="lg" shape="pill" variant="secondary">
+          See all tests
+        </Button>
+      </div>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+    <div class="flex flex-col gap-14">
+      <!-- ── Main destinations ─────────────────────────────────────────── -->
+      <section aria-labelledby="dest">
+        <h2 id="dest" class="text-display-md text-ink">Where you probably meant to go</h2>
+        <ul class="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {
+            destinations.map((dest) => (
+              <li>
+                <Card
+                  href={dest.href}
+                  elevation="e2"
+                  padding="lg"
+                  class="flex h-full flex-col"
+                >
+                  <h3 class="text-body-lg font-medium text-ink">{dest.title}</h3>
+                  <p class="mt-2 text-body-sm text-body">{dest.body}</p>
+                </Card>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+
+      <!-- ── The twelve fills ──────────────────────────────────────────── -->
+      <section aria-labelledby="fills-404">
+        <h2 id="fills-404" class="text-display-md text-ink">
+          Single colour fills
+        </h2>
+        <p class="mt-2 max-w-prose text-body-md text-body">
+          If you were after one specific colour, it is here. Every fill is an
+          exact sRGB value painted by the browser.
+        </p>
+        <ul class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+          {
+            FILLS.map((fill) => (
+              <li>
+                <a
+                  href={`/test/${fill.slug}`}
+                  class="flex items-center gap-3 rounded-md border border-hairline bg-canvas p-3 shadow-e1 transition-shadow duration-150 ease-out hover:shadow-e3"
+                >
+                  <span
+                    class="size-8 shrink-0 rounded-sm shadow-e1"
+                    style={`background-color:${fill.hex}`}
+                    aria-hidden="true"
+                  />
+                  <span>
+                    <span class="block text-body-sm font-medium text-ink">
+                      {fill.name}
+                    </span>
+                    <span class="block font-mono text-caption text-mute uppercase">
+                      {fill.hex}
+                    </span>
+                  </span>
+                </a>
+              </li>
+            ))
+          }
+        </ul>
+      </section>
+    </div>
+  </div>
+</SiteLayout>

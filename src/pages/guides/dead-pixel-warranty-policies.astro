@@ -1,0 +1,151 @@
+---
+import GuideLayout from "../../layouts/GuideLayout.astro";
+import Card from "../../components/site/Card.astro";
+---
+
+<GuideLayout
+  title="Dead Pixel Warranty Policies — How to Find the One That Applies"
+  description="We deliberately publish no per-brand pixel thresholds, because they differ by product line, region and purchase channel and change without notice. Here is how to find the policy that actually governs your panel, and how to make a claim that holds up."
+  heading="Dead pixel warranty policies"
+  lede="You want a number. We are not going to give you one — and the reason is the most useful thing on this page. Here is how to find the number that actually applies to your panel."
+  updated="2026-08-27"
+  slug="dead-pixel-warranty-policies"
+>
+  <Card surface="soft" elevation="e1" padding="lg">
+    <p class="text-body-sm font-medium text-ink">In short</p>
+    <p class="mt-2 text-body-sm text-body">
+      There is no universal pixel threshold, and any site quoting one per brand is
+      guessing on your behalf. The policy that governs your panel lives in the
+      manufacturer&rsquo;s own warranty document for your exact model, in the
+      retailer&rsquo;s returns policy, and in your statutory consumer rights.
+      Check all three &mdash; and use the retailer return if the window is open,
+      because it is faster.
+    </p>
+  </Card>
+
+  <h2>Why there are no brand thresholds on this page</h2>
+  <p>
+    Pixel-fault allowances are not set per brand. They are set per product line,
+    and they differ between a consumer monitor and a professional one from the
+    same manufacturer, between regions, and between purchase channels &mdash; a
+    business or education contract often carries a better pixel guarantee than the
+    same model bought at retail. They also change without notice, and without any
+    announcement that would tell us to update a page.
+  </p>
+  <p>
+    So a table of brand thresholds here would be wrong for a predictable share of
+    readers, and wrong in the two worst possible directions. A number that is too
+    strict tells someone with a valid claim not to bother, and they keep a faulty
+    panel. A number that is too generous sends someone into a support queue to
+    argue for something they were never entitled to, and they lose an afternoon
+    and the goodwill they might have needed. Neither is a service. Learning to
+    find your own answer takes about five minutes and is right every time.
+  </p>
+
+  <h2>Where the policy actually lives</h2>
+  <p>
+    Three documents can apply at once, and they are not ranked the way most people
+    assume.
+  </p>
+  <ul>
+    <li>
+      <strong>The manufacturer&rsquo;s warranty for your exact model.</strong>
+      Usually a PDF or a support article on the manufacturer&rsquo;s own domain,
+      and usually specific to a product family rather than the whole brand. This
+      is the document a support agent will read from.
+    </li>
+    <li>
+      <strong>The retailer&rsquo;s returns policy.</strong> Frequently more
+      generous than the manufacturer&rsquo;s and almost always easier to invoke,
+      because inside a returns window a retailer typically does not need to agree
+      that the panel is defective &mdash; only that you are returning it. Do not
+      skip this one.
+    </li>
+    <li>
+      <strong>Your statutory consumer rights.</strong> For a purchase made at a
+      distance in the UK or EU, statutory rights sit <em>alongside</em> the
+      manufacturer&rsquo;s policy rather than underneath it, and a manufacturer
+      cannot sign them away on your behalf. Time limits and remedies vary by
+      jurisdiction and get amended, so check the current rules for where you
+      bought rather than trusting any figure quoted second-hand &mdash; including
+      here.
+    </li>
+  </ul>
+
+  <h2>The search that finds it</h2>
+  <p>
+    Take the exact model number from the label on the back of the panel &mdash;
+    not the marketing name, which is often shared across several distinct SKUs
+    &mdash; and search for it together with <code>pixel policy</code> or
+    <code>warranty</code>, restricted to the manufacturer&rsquo;s own domain.
+    Ignore forum posts and reseller summaries entirely; they are the source of most
+    of the wrong numbers in circulation. If the search turns up nothing for your
+    model, ask the manufacturer&rsquo;s support channel directly for the pixel
+    policy document and get the answer in writing.
+  </p>
+
+  <h2>What the policy will be phrased in terms of</h2>
+  <p>
+    Every pixel policy worth reading is written in the same vocabulary, which is
+    the ISO vocabulary:
+  </p>
+  <ul>
+    <li>
+      Counts of <strong>bright (type 1)</strong>, <strong>dark (type 2)</strong>
+      and <strong>sub-pixel (type 3)</strong> faults, each with its own separate
+      allowance &mdash; bright faults are usually allowed in smaller numbers than
+      dark ones.
+    </li>
+    <li>
+      Whether the fault falls inside a defined <strong>centre zone</strong>, which
+      typically carries a stricter allowance than the edges.
+    </li>
+    <li>
+      <strong>Cluster rules</strong>, covering faults sitting close enough together
+      to read as one blemish.
+    </li>
+  </ul>
+  <p>
+    That is exactly the scheme explained in
+    <a href="/guides/iso-pixel-fault-classes">ISO pixel fault classes</a>. Read it
+    before you read your policy and the policy will make sense on the first pass.
+  </p>
+
+  <h2>How to make the claim well</h2>
+  <ol>
+    <li>
+      <strong>Capture the evidence before you contact anyone.</strong> Run the
+      <a href="/test/sequence">guided pixel test</a> and generate a
+      <a href="/report">report</a>. Photograph each fault with the model and
+      serial number visible in the same frame.
+    </li>
+    <li>
+      <strong>Note the date, and where it sits in the return window.</strong> If
+      the window is still open, say so &mdash; it changes which route you should
+      be taking.
+    </li>
+    <li>
+      <strong>Quote counts by type.</strong> &ldquo;Two type 1 bright pixels and
+      one type 3 stuck sub-pixel, one of them within the centre third of the
+      panel&rdquo; is a claim against a written policy. &ldquo;Some dead
+      pixels&rdquo; is an opinion, and it invites a first-line agent to close the
+      case.
+    </li>
+    <li>
+      <strong>Get everything in writing.</strong> Email or a chat transcript, and
+      a case reference. A phone call you cannot cite did not happen.
+    </li>
+  </ol>
+
+  <h2>The pragmatic point</h2>
+  <p>
+    If the retailer&rsquo;s return window is still open, use it. A return is a
+    transaction; a warranty claim is an argument in which someone else applies a
+    threshold to your panel and may reasonably reach a different conclusion than
+    you did. The return is faster, is rarely contested, and does not require
+    anyone to agree that a fault count has been exceeded. Check the window first
+    &mdash; it is the whole reason
+    <a href="/guides/how-to-test-a-new-monitor">testing a new monitor</a> starts
+    with the calendar rather than the screen.
+  </p>
+</GuideLayout>

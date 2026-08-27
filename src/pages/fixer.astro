@@ -1,0 +1,288 @@
+---
+/**
+ * Stuck pixel fixer.
+ *
+ * Gated behind an explicit photosensitivity consent step. See
+ * `lib/fixerRunner.ts` for why this is a movable patch rather than a
+ * full-screen strobe — the short version is that it is both safer and more
+ * likely to work.
+ */
+import TestPageLayout from "../layouts/TestPageLayout.astro";
+import TestSurface from "../components/test/TestSurface.astro";
+import TestHud from "../components/test/TestHud.astro";
+import EpilepsyGate from "../components/test/EpilepsyGate.astro";
+import Button from "../components/site/Button.astro";
+import Eyebrow from "../components/site/Eyebrow.astro";
+import Card from "../components/site/Card.astro";
+import { getTest } from "../lib/tests";
+
+const test = getTest("fixer");
+if (!test) throw new Error("Missing registry entry: fixer");
+---
+
+<TestPageLayout
+  title="Stuck Pixel Fixer — Free Browser Tool to Unstick a Sub-Pixel"
+  description="Try to free a stuck sub-pixel by cycling colours over it. Uses a small movable patch instead of a full-screen strobe, so it is both safer and more effective. Explicit photosensitivity warning, no autoplay."
+  heading="Stuck pixel fixer"
+  lede="Cycles colours rapidly over a jammed sub-pixel to try to work it loose. It sometimes helps with a stuck pixel. It will never revive a dead one."
+  category="pixels"
+  slug="fixer"
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <EpilepsyGate defaultRate="6 colour changes per second in a small patch">
+        <Fragment slot="action">
+          <Button size="lg" shape="pill" disabled data-gated data-surface-launch>
+            Open the fixer
+          </Button>
+        </Fragment>
+      </EpilepsyGate>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Stuck or dead</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Check which one you have first
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            A <strong class="font-medium text-ink">stuck</strong> sub-pixel is
+            receiving power but jammed in one state. It shows as a coloured dot
+            &mdash; red, green, blue, or a combination &mdash; that stays lit on a
+            black screen. This tool is for those.
+          </p>
+          <p>
+            A <strong class="font-medium text-ink">dead</strong> pixel receives no
+            power at all. It stays black on every fill, including white. No
+            software can fix that, and any site that claims otherwise is wasting
+            your time. Nothing in a browser can restore power to a transistor that
+            has failed.
+          </p>
+          <p>
+            If you are not sure which you are looking at, run the
+            <a
+              href="/test/sequence"
+              class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+              >guided sequence</a
+            > first. A dot that vanishes on white but glows on black is stuck. A dot
+            that stays dark on white is dead.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Method</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">How to use it</h2>
+        <ol class="mt-4 flex flex-col gap-4 text-body-md text-body">
+          <li>
+            <strong class="font-medium text-ink">1. Find the pixel first.</strong>
+            Note roughly where it sits on the screen before you open the fixer.
+            Once colours are cycling it is much harder to locate.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">2. Drag the patch over it.</strong>
+            The flashing square starts in the centre. Drag it, or nudge it with
+            <kbd class="rounded-xs border border-hairline bg-canvas-soft-2 px-1 font-mono text-caption">W</kbd>
+            <kbd class="rounded-xs border border-hairline bg-canvas-soft-2 px-1 font-mono text-caption">A</kbd>
+            <kbd class="rounded-xs border border-hairline bg-canvas-soft-2 px-1 font-mono text-caption">S</kbd>
+            <kbd class="rounded-xs border border-hairline bg-canvas-soft-2 px-1 font-mono text-caption">D</kbd>.
+            Hold Shift for larger steps.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">3. Let it run for 20 to 30 minutes.</strong>
+            Then pause and check. If nothing has changed, another session
+            sometimes helps; if two long sessions do nothing, further attempts are
+            unlikely to.
+          </li>
+          <li>
+            <strong class="font-medium text-ink">4. Do not press on the screen.</strong>
+            Some guides suggest rubbing the panel with a cloth or a stylus. That
+            can permanently damage the liquid crystal layer or the polariser, and
+            it will void your warranty. It is not worth the risk over one pixel.
+          </li>
+        </ol>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Expectations</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          What this realistically achieves
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            Colour cycling frees some stuck sub-pixels and not others. There is no
+            published success rate worth quoting, because it depends entirely on
+            why the sub-pixel jammed &mdash; a transistor stuck mid-state may
+            recover, while physical contamination in the cell will not.
+          </p>
+          <p>
+            The screen stays awake on its own while the fixer runs, using the
+            Screen Wake Lock API where the browser supports it, so you can leave
+            it going. Keep the device cool and plugged in.
+          </p>
+          <p>
+            If it does not work, that is your answer for a warranty claim: a fault
+            that survives colour cycling is a real hardware defect. Take it to
+            your <a
+              href="/report"
+              class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+              >report</a
+            > and check it against the ISO fault classes.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Safety</Eyebrow>
+        <ul class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          <li>Nothing flashes until you press Start.</li>
+          <li>
+            The small patch defaults to 6 changes per second. Full-screen mode is
+            capped at 3, the <span class="whitespace-nowrap">WCAG 2.3.1</span> flash
+            limit.
+          </li>
+          <li>
+            If your system asks for reduced motion, colours are held for four
+            seconds each instead of cycling.
+          </li>
+          <li>
+            <kbd class="rounded-xs border border-hairline bg-canvas-soft-2 px-1 font-mono text-caption">Esc</kbd>
+            stops it immediately.
+          </li>
+        </ul>
+      </Card>
+    </aside>
+  </div>
+
+  <TestSurface slot="surface" id="surface">
+    <!-- Black field. The patch is the only thing that changes. -->
+    <div
+      class="dpt-fill"
+      role="img"
+      aria-label="Black field with a colour-cycling patch"
+      style="background-color:#000000"
+    >
+    </div>
+
+    <div class="fixer-patch" data-fixer-patch style="background-color:#ff0000">
+    </div>
+
+    <TestHud slot="hud" label="Fixer controls">
+      <p data-hud-note class="dpt-hud-note" hidden></p>
+
+      <div class="dpt-hud-group">
+        <button type="button" data-fixer-toggle aria-pressed="false" class="dpt-hud-btn">
+          Start
+        </button>
+        <span class="dpt-hud-label">
+          <b data-fixer-elapsed data-numeric>00:00</b>
+        </span>
+        <button type="button" data-surface-exit class="dpt-hud-btn">
+          Exit
+          <kbd class="dpt-hud-kbd">Esc</kbd>
+        </button>
+      </div>
+
+      <div class="fixer-row">
+        <span class="dpt-hud-sub">Area</span>
+        <button type="button" data-fixer-mode="patch" aria-pressed="true" class="dpt-hud-btn">
+          Patch
+        </button>
+        <button type="button" data-fixer-mode="fullscreen" aria-pressed="false" class="dpt-hud-btn">
+          Full screen
+        </button>
+      </div>
+
+      <div class="fixer-row">
+        <label class="dpt-hud-sub" for="fixer-rate">Rate</label>
+        <input
+          id="fixer-rate"
+          type="range"
+          min="1"
+          max="10"
+          step="1"
+          value="6"
+          data-fixer-rate
+          class="fixer-range"
+        />
+        <output class="dpt-hud-sub" data-fixer-rate-out>6 per second</output>
+      </div>
+
+      <div class="fixer-row">
+        <label class="dpt-hud-sub" for="fixer-size">Patch size</label>
+        <input
+          id="fixer-size"
+          type="range"
+          min="60"
+          max="480"
+          step="20"
+          value="200"
+          data-fixer-size
+          class="fixer-range"
+        />
+        <span class="dpt-hud-sub">drag it, or W A S D</span>
+      </div>
+
+      <p data-fixer-status role="status" aria-live="polite" class="fixer-sr"></p>
+    </TestHud>
+  </TestSurface>
+</TestPageLayout>
+
+<style>
+  .fixer-patch {
+    --patch-size: 200px;
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: var(--patch-size);
+    height: var(--patch-size);
+    /* Negative margins rather than a transform: a transform would promote this
+       to its own composited layer and can resample the edges, which is exactly
+       what a colour-critical surface must avoid. */
+    margin-left: calc(var(--patch-size) / -2);
+    margin-top: calc(var(--patch-size) / -2);
+    cursor: grab;
+    touch-action: none;
+  }
+
+  /* Full-screen mode: the patch becomes the whole field. */
+  :global(.dpt-surface[data-fixer-mode="fullscreen"]) .fixer-patch {
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: default;
+  }
+
+  .fixer-row {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+  }
+
+  .fixer-range {
+    width: 8rem;
+    accent-color: #fff;
+  }
+
+  .fixer-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { mountFixer } from "../lib/fixerRunner";
+  mountFixer();
+</script>

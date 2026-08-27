@@ -1,0 +1,69 @@
+---
+/**
+ * Button — renders <a> when given href, <button> otherwise.
+ *
+ * `shape` encodes a DESIGN.md rule worth stating: the brand runs two CTA
+ * scales, a 100px marketing pill and a 6px nav radius, and explicitly forbids
+ * mixing them on one screen. Marketing bands pass "pill"; the nav passes "nav".
+ */
+interface Props {
+  href?: string | undefined;
+  variant?: "primary" | "secondary" | "ghost";
+  size?: "sm" | "md" | "lg";
+  shape?: "pill" | "nav";
+  type?: "button" | "submit" | "reset";
+  disabled?: boolean;
+  class?: string | undefined;
+  /** Required when the label is an icon only. */
+  "aria-label"?: string | undefined;
+  [key: string]: unknown;
+}
+
+const {
+  href,
+  variant = "primary",
+  size = "md",
+  shape = "pill",
+  type = "button",
+  disabled = false,
+  class: className,
+  ...rest
+} = Astro.props;
+
+const Tag = href ? "a" : "button";
+
+const base =
+  "inline-flex items-center justify-center gap-2 font-medium select-none " +
+  // Enumerated transition properties — never `transition: all`.
+  "transition-[background-color,color,box-shadow,border-color] duration-150 ease-out " +
+  "disabled:opacity-50 disabled:pointer-events-none";
+
+const shapes = {
+  pill: "rounded-pill",
+  nav: "rounded-sm",
+};
+
+const sizes = {
+  sm: "h-7 px-3 text-body-sm",
+  md: "h-10 px-4 text-body-sm",
+  lg: "h-12 px-6 text-body-md",
+};
+
+const variants = {
+  primary: "bg-ink text-on-primary hover:bg-body active:bg-ink",
+  secondary:
+    "bg-canvas text-ink shadow-e2 hover:bg-canvas-soft-2 active:bg-hairline",
+  ghost: "bg-transparent text-body hover:bg-canvas-soft-2 hover:text-ink",
+};
+---
+
+<Tag
+  href={href}
+  type={href ? undefined : type}
+  disabled={href ? undefined : disabled}
+  aria-disabled={href && disabled ? "true" : undefined}
+  class:list={[base, shapes[shape], sizes[size], variants[variant], className]}
+  {...rest}
+>
+  <slot />
+</Tag>

@@ -1,0 +1,106 @@
+---
+/**
+ * EpilepsyGate — a consent barrier in front of any flashing test.
+ *
+ * The competitor ships a high-speed RGB flasher that starts on page load with
+ * no warning at all. Rapid full-screen luminance changes can trigger seizures
+ * in people with photosensitive epilepsy, and WCAG 2.3.1 caps flashing at three
+ * per second for exactly this reason.
+ *
+ * This component is a hard gate, not a dismissible modal:
+ *   · nothing flashes until the checkbox is ticked — no autoplay, ever
+ *   · the launch control is disabled in markup, so it is inert even before JS
+ *   · `prefers-reduced-motion: reduce` is surfaced to the user rather than
+ *     silently overriding their choice
+ *
+ * Wrap the launch control in the `action` slot and give it `data-gated`.
+ */
+import Badge from "../site/Badge.astro";
+
+interface Props {
+  /** Human description of the default rate, e.g. "3 changes per second". */
+  defaultRate: string;
+  class?: string | undefined;
+}
+
+const { defaultRate, class: className } = Astro.props;
+---
+
+<section
+  aria-labelledby="epilepsy-gate-heading"
+  class:list={[
+    "rounded-lg border border-warning bg-warning-soft p-5 md:p-6",
+    className,
+  ]}
+>
+  <Badge tone="warning">Photosensitivity warning</Badge>
+
+  <h2
+    id="epilepsy-gate-heading"
+    class="mt-3 text-display-sm text-warning-deep"
+  >
+    This test changes the whole screen colour repeatedly
+  </h2>
+
+  <p class="mt-2 max-w-prose text-body-sm text-warning-deep">
+    Rapid, large changes in brightness can trigger seizures in people with
+    photosensitive epilepsy. If you have ever had a seizure, or you are unsure,
+    do not run this test. It defaults to {defaultRate}, at or below the
+    three-per-second limit set by <span class="whitespace-nowrap">WCAG 2.3.1</span
+    >, and it will not start on its own.
+  </p>
+
+  <p
+    data-reduced-motion-note
+    hidden
+    class="mt-3 rounded-sm bg-canvas/60 px-3 py-2 text-body-sm text-warning-deep"
+  >
+    Your system is set to reduce motion. The non-flashing variant is selected
+    below — it holds each colour for several seconds instead of cycling.
+  </p>
+
+  <label class="mt-4 flex cursor-pointer items-start gap-2.5 text-body-sm text-warning-deep">
+    <input
+      type="checkbox"
+      data-gate-consent
+      class="mt-0.5 size-4 shrink-0 accent-warning-deep"
+    />
+    <span>
+      I understand the risk and want to continue.
+    </span>
+  </label>
+
+  <div class="mt-5">
+    <slot name="action" />
+  </div>
+</section>
+
+<script>
+  /**
+   * Enables the gated launch control only while consent is ticked. Unticking
+   * re-disables it, so a mid-session change of mind is honoured.
+   */
+  const gate = document.querySelector<HTMLElement>(
+    "[data-gate-consent]",
+  )?.closest("section");
+
+  if (gate) {
+    const consent = gate.querySelector<HTMLInputElement>("[data-gate-consent]");
+    const gated = Array.from(
+      document.querySelectorAll<HTMLButtonElement>("[data-gated]"),
+    );
+    const note = gate.querySelector<HTMLElement>("[data-reduced-motion-note]");
+
+    if (note && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      note.hidden = false;
+    }
+
+    const sync = () => {
+      const ok = Boolean(consent?.checked);
+      for (const el of gated) el.disabled = !ok;
+    };
+
+    consent?.addEventListener("change", sync);
+    sync();
+  }
+</script>

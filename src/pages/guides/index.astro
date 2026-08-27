@@ -1,0 +1,82 @@
+---
+/**
+ * /guides — the guide index.
+ *
+ * Renders the same GUIDES array the related-links block uses, so the index can
+ * never list something the guides themselves don't cross-link to.
+ */
+import SiteLayout from "../../layouts/SiteLayout.astro";
+import { GUIDES } from "../../layouts/GuideLayout.astro";
+import Card from "../../components/site/Card.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Button from "../../components/site/Button.astro";
+import { TESTS } from "../../lib/tests";
+---
+
+<SiteLayout
+  title="Screen Testing Guides — Dead Pixels, Warranties and ISO Fault Classes"
+  description="Plain-English guides to screen faults: dead versus stuck pixels, testing a new monitor before the return window closes, finding the warranty policy that actually applies, testing a phone screen, and reading ISO pixel fault classes."
+  bleed
+>
+  <header class="border-b border-hairline bg-canvas">
+    <div class="mx-auto max-w-page px-4 pt-12 pb-14 md:px-6 md:pt-16">
+      <Eyebrow>Guides</Eyebrow>
+      <h1 class="mt-3 max-w-3xl text-display-lg text-ink">
+        How to read what your screen is showing you
+      </h1>
+      <p class="mt-4 max-w-prose text-body-lg text-body">
+        A fill tells you there is a dot. It doesn&rsquo;t tell you whether the
+        dot is dead or merely stuck, whether it is worth a return, or what
+        wording will get a warranty claim taken seriously. These {GUIDES.length}
+         guides cover that part &mdash; written to be accurate rather than
+        reassuring, and honest about what a browser cannot measure.
+      </p>
+    </div>
+  </header>
+
+  <div class="mx-auto max-w-page px-4 py-14 md:px-6 md:py-16">
+    <ul class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+      {
+        GUIDES.map((guide) => (
+          <li>
+            <Card
+              href={guide.href}
+              elevation="e2"
+              padding="lg"
+              class="flex h-full flex-col"
+            >
+              <h2 class="text-body-lg font-medium text-ink">{guide.title}</h2>
+              <p class="mt-2 text-body-sm text-body">{guide.blurb}</p>
+              <p class="mt-4 text-caption text-link">Read the guide &rarr;</p>
+            </Card>
+          </li>
+        ))
+      }
+    </ul>
+
+    <section
+      aria-labelledby="start-testing"
+      class="mt-16 border-t border-hairline pt-12"
+    >
+      <Eyebrow as="h2">Rather just test</Eyebrow>
+      <p id="start-testing" class="mt-3 max-w-prose text-display-md text-ink">
+        You don&rsquo;t have to read any of this first
+      </p>
+      <p class="mt-4 max-w-prose text-body-md text-body">
+        If you have a screen in front of you and a suspicion, start with the
+        guided run: twelve full-screen fills in the order that makes faults
+        easiest to see, with a tap to log each one you find. Come back to the
+        guides once you know what you are looking at. All {TESTS.length} tests
+        are also listed individually if you already know which one you need.
+      </p>
+      <div class="mt-8 flex flex-col gap-3 sm:flex-row">
+        <Button href="/test/sequence" size="lg" shape="pill">
+          Start the guided test
+        </Button>
+        <Button href="/tests" size="lg" shape="pill" variant="secondary">
+          Browse all tests
+        </Button>
+      </div>
+    </section>
+  </div>
+</SiteLayout>

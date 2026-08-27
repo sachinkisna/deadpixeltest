@@ -1,0 +1,417 @@
+---
+/**
+ * Backlight bleed and IPS glow.
+ *
+ * The whole reason this page exists is the distinction in the second section.
+ * Bleed and glow look superficially alike on a black field, they get returned
+ * interchangeably, and only one of them is a defect. Everything else here is in
+ * service of that one judgement.
+ *
+ * Three fields rather than one: pure black is where bleed is brightest, but
+ * near black and dark grey are where you can tell whether what you are seeing
+ * clings to the bezel or sits inside the panel.
+ */
+import TestPageLayout from "../../layouts/TestPageLayout.astro";
+import TestSurface from "../../components/test/TestSurface.astro";
+import TestHud from "../../components/test/TestHud.astro";
+import LaunchPanel from "../../components/test/LaunchPanel.astro";
+import Eyebrow from "../../components/site/Eyebrow.astro";
+import Card from "../../components/site/Card.astro";
+import { getFill } from "../../lib/palette";
+import { getTest } from "../../lib/tests";
+
+const test = getTest("backlight-bleed");
+if (!test) throw new Error("Missing registry entry: backlight-bleed");
+
+/** Field order. Mirrored by the `<script>` below, which adds the copy. */
+const ORDER = ["black", "grey-12", "grey-25"] as const;
+
+const fields = ORDER.map((slug) => {
+  const fill = getFill(slug);
+  if (!fill) throw new Error(`Missing fill: ${slug}`);
+  return fill;
+});
+
+const first = fields[0];
+if (!first) throw new Error("backlight-bleed: empty field list");
+---
+
+<TestPageLayout
+  title="Backlight Bleed Test — And How to Tell It From IPS Glow"
+  description="A pure black full-screen field for checking backlight bleed, with the one test that separates bleed from IPS glow: move your head. Bleed stays put, glow shifts and fades. Only one of them is a defect."
+  heading="Backlight bleed &amp; IPS glow"
+  lede="Pure black at full screen shows every bit of light escaping past the edge seal. It also shows IPS glow, which looks similar, is not a defect, and is the reason a lot of good monitors get returned."
+  category="panel"
+  slug={test.slug}
+  needsDarkRoom
+  limitation="A browser cannot measure luminance, so there is no cd/m² figure here and no threshold to pass or fail — only what you can see. And be very careful with photographs. A long-exposure phone photo of a black screen is the single most misleading evidence in monitor return threads: the sensor accumulates light your eye never registers and the camera's auto-exposure lifts it further, so a panel that looks fine in the room photographs like a lantern. Trust your eyes, at the brightness you actually use."
+>
+  <div class="grid gap-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-14">
+    <div class="max-w-prose">
+      <LaunchPanel
+        label="Launch black field"
+        needsDarkRoom
+        prerequisites={[
+          "Set the brightness you actually use, not maximum.",
+          "Sit centred and square to the screen, at your normal distance.",
+          "Give your eyes a minute in the dark before you judge anything.",
+        ]}
+      />
+
+      <section class="mt-12">
+        <Eyebrow as="h2">What it shows</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          Light that should not be getting out
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            An LCD cannot switch its backlight off. Displaying black means
+            twisting the liquid crystal to block as much of a permanently lit
+            backlight as it can, and a gasket around the edge of the panel stops
+            the rest escaping past the sides. Where that seal is imperfect,
+            light leaks out at the border of the image. That is backlight bleed.
+          </p>
+          <p>
+            Pure black is where it is brightest and easiest to see. The two
+            darker greys that follow are diagnostic: as the field lifts off
+            black, real bleed stays pinned to the extreme edge of the panel while
+            clouding and glow spread inward. If you have already run the
+            <a
+              href="/test/uniformity"
+              class="text-link underline decoration-link-bg-soft underline-offset-2 hover:decoration-link"
+              >uniformity test</a
+            >, this is the same panel stack seen from the other end of the
+            brightness range.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">The distinction that matters</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">Bleed or glow</h2>
+        <p class="mt-3 text-body-md text-body">
+          These get confused constantly, and it decides whether you have a case
+          or not.
+        </p>
+
+        <div class="mt-5 flex flex-col gap-5">
+          <div class="rounded-md border border-hairline bg-canvas-soft p-5">
+            <p class="text-body-md font-medium text-ink">Backlight bleed</p>
+            <p class="mt-2 text-body-md text-body">
+              Light escaping past the edge seal. It appears as bright patches or
+              streaks at a specific edge or corner, often with a slightly hard,
+              flame-like shape. It is <strong class="font-medium text-ink"
+                >fixed</strong
+              >: it stays in the same place, at the same intensity, whatever
+              angle you look from. It is manufacturing variance, it differs from
+              unit to unit, and a severe case is a legitimate return.
+            </p>
+          </div>
+
+          <div class="rounded-md border border-hairline bg-canvas-soft p-5">
+            <p class="text-body-md font-medium text-ink">IPS glow</p>
+            <p class="mt-2 text-body-md text-body">
+              An inherent property of the IPS liquid-crystal structure, not a
+              fault in your unit. Off-axis light scatters through the cell, so a
+              broad silvery-grey sheen washes over a corner region. It
+              <strong class="font-medium text-ink">moves</strong> as you change
+              viewing angle, and it is always strongest on the corner furthest
+              from your eye. No IPS panel ever made is free of it.
+            </p>
+          </div>
+        </div>
+
+        <p class="mt-5 text-body-md text-body">
+          <strong class="font-medium text-ink">The test:</strong> sit centred,
+          fix your attention on one bright corner, then move your head slowly
+          left and right and lean in and back. If the brightness shifts, fades,
+          or migrates to a different corner, it is glow &mdash; leave it alone.
+          If it sits there unchanged like a mark on the glass, it is bleed. Then
+          switch the <strong class="font-medium text-ink">Grid</strong> on and
+          note which cell it occupies, because that is the detail a support agent
+          needs.
+        </p>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">Judging it fairly</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">
+          A black screen in a black room is not your use case
+        </h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            This test deliberately stacks the odds against the panel: maximum
+            contrast content, no ambient light, nothing else on screen competing
+            for your attention. At 100% brightness in a pitch-black room, every
+            monitor on the market shows something. Set the brightness you
+            actually use, and then ask the only question that matters &mdash;
+            does it intrude on real content? Letterbox bars in a film and dark
+            game scenes are the honest test. A grey desktop is not.
+          </p>
+          <p>
+            Give it a few weeks before you decide, too. Some bleed relaxes on its
+            own as the panel settles under its own clamping pressure and the
+            gasket takes its final shape, so a faint corner on day one is worth
+            re-checking on day twenty. That said, do not let it push you past
+            the retailer's return window: check on arrival, note what you saw,
+            and re-check before the window closes.
+          </p>
+        </div>
+      </section>
+
+      <section class="mt-12">
+        <Eyebrow as="h2">What to do</Eyebrow>
+        <h2 class="mt-2 text-display-sm text-ink">And what never to do</h2>
+        <div class="mt-3 flex flex-col gap-4 text-body-md text-body">
+          <p>
+            If real bleed is visible in ordinary dark content at your normal
+            brightness, that is a reasonable exchange request. Go through the
+            retailer rather than the manufacturer where you can &mdash; bleed
+            tolerances are rarely written into a warranty, while a return window
+            needs no justification. Ask for a replacement of the same model
+            rather than a refund if you liked the screen otherwise, since this
+            varies panel to panel.
+          </p>
+          <p>
+            <strong class="font-medium text-warning-deep">
+              Do not massage, rub or press the bezel or the panel.
+            </strong>
+            This advice circulates constantly and it is bad advice. The pressure
+            you would need to move a gasket is more than enough to permanently
+            damage the polariser or the liquid crystal layer beneath it, leaving
+            a bright blotch that is worse than the bleed and definitely not
+            covered. Pressing on a panel is a documented cause of mura. It also
+            voids your warranty at exactly the moment you might need it.
+          </p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="lg:pt-1">
+      <Card elevation="e2" padding="lg">
+        <Eyebrow as="h2">Decide in ten seconds</Eyebrow>
+        <ul class="mt-4 flex flex-col gap-3 text-body-sm text-body">
+          <li>
+            <span class="font-medium text-ink">Move your head.</span> It shifts or
+            fades &rarr; IPS glow, not a defect.
+          </li>
+          <li>
+            <span class="font-medium text-ink">It does not move.</span> Fixed
+            bright patch at an edge &rarr; backlight bleed.
+          </li>
+          <li>
+            <span class="font-medium text-ink">Inside the panel, not at the edge?</span>
+            Soft cloud shapes &rarr; clouding, see the uniformity test.
+          </li>
+          <li class="border-t border-hairline pt-3 text-mute">
+            Judge at your normal brightness, in real content. Never photograph it
+            as evidence.
+          </li>
+        </ul>
+      </Card>
+
+      <div class="mt-6">
+        <Eyebrow as="h2">The three fields</Eyebrow>
+        <ul class="mt-3 flex flex-col gap-2">
+          {
+            fields.map((fill) => (
+              <li class="flex items-center gap-2 text-body-sm text-body">
+                <span
+                  class="size-3.5 shrink-0 rounded-xs shadow-e1"
+                  style={`background-color:${fill.hex}`}
+                  aria-hidden="true"
+                />
+                {fill.name}
+                <span class="ml-auto font-mono text-code text-mute uppercase">
+                  {fill.hex}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+      </div>
+    </aside>
+  </div>
+
+  <TestSurface slot="surface" id="surface">
+    <div
+      class="dpt-fill"
+      data-field-layer
+      data-field-id={first.slug}
+      role="img"
+      aria-label={`Full screen ${first.name} field`}
+      style={`background-color:${first.hex}`}
+    >
+    </div>
+
+    <!-- Thirds grid, off by default. White core with a black halo so the line
+         is legible on black without any alpha or blending. -->
+    <div class="bb-grid" aria-hidden="true">
+      <span class="bb-line bb-line--v" style="left:33.3333%"></span>
+      <span class="bb-line bb-line--v" style="left:66.6667%"></span>
+      <span class="bb-line bb-line--h" style="top:33.3333%"></span>
+      <span class="bb-line bb-line--h" style="top:66.6667%"></span>
+    </div>
+
+    <TestHud slot="hud" label="Bleed test controls">
+      <p data-hud-note class="dpt-hud-note" hidden></p>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-nav-prev
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Previous field"
+        >
+          <span aria-hidden="true">&#9664;</span>
+        </button>
+        <span class="dpt-hud-label">
+          <b data-field-name>{first.name}</b>
+          <span class="dpt-hud-sub" data-field-position>1 / {fields.length}</span>
+        </span>
+        <button
+          type="button"
+          data-nav-next
+          class="dpt-hud-btn dpt-hud-btn--icon"
+          aria-label="Next field"
+        >
+          <span aria-hidden="true">&#9654;</span>
+        </button>
+      </div>
+
+      <div class="dpt-hud-group">
+        <button
+          type="button"
+          data-grid-toggle
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Grid
+        </button>
+        <button
+          type="button"
+          data-hud-help
+          aria-pressed="false"
+          class="dpt-hud-btn"
+        >
+          Help
+          <kbd class="dpt-hud-kbd">H</kbd>
+        </button>
+        <button type="button" data-surface-exit class="dpt-hud-btn">
+          Exit
+          <kbd class="dpt-hud-kbd">Esc</kbd>
+        </button>
+      </div>
+
+      <div data-help-panel hidden class="bb-help">
+        <p data-field-reveals></p>
+        <p class="dpt-hud-sub">
+          Move your head: if it shifts or fades it is IPS glow, not bleed.
+        </p>
+        <p class="dpt-hud-sub">
+          <kbd class="dpt-hud-kbd">&larr;</kbd>
+          <kbd class="dpt-hud-kbd">&rarr;</kbd> change field &middot;
+          <kbd class="dpt-hud-kbd">H</kbd> help &middot;
+          <kbd class="dpt-hud-kbd">Esc</kbd> exit
+        </p>
+      </div>
+
+      <p data-field-status role="status" aria-live="polite" class="bb-sr"></p>
+    </TestHud>
+  </TestSurface>
+</TestPageLayout>
+
+<style>
+  .bb-grid {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+  }
+
+  /* fieldRunner sets data-grid on the surface, which is rendered by
+     TestSurface and so carries no scope hash of this page's. */
+  :global(.dpt-surface[data-grid="off"]) .bb-grid {
+    display: none;
+  }
+
+  .bb-line {
+    position: absolute;
+    display: block;
+    background-color: #ffffff;
+  }
+
+  .bb-line--v {
+    top: 0;
+    width: 1px;
+    height: 100%;
+    box-shadow:
+      -1px 0 0 #000000,
+      1px 0 0 #000000;
+  }
+
+  .bb-line--h {
+    left: 0;
+    width: 100%;
+    height: 1px;
+    box-shadow:
+      0 -1px 0 #000000,
+      0 1px 0 #000000;
+  }
+
+  .bb-help {
+    width: 100%;
+    max-width: 34rem;
+    padding-top: 0.375rem;
+    border-top: 1px solid #262626;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    text-align: center;
+  }
+
+  .bb-help[hidden] {
+    display: none;
+  }
+
+  .bb-help p + p {
+    margin-top: 0.375rem;
+  }
+
+  .bb-sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+</style>
+
+<script>
+  import { mountFieldRunner, type FieldDef } from "../../lib/fieldRunner";
+  import { getFill } from "../../lib/palette";
+
+  /** Field order plus the help-panel guidance for each. */
+  const SPEC: ReadonlyArray<readonly [string, string]> = [
+    [
+      "black",
+      "Bleed is brightest here. Look along every edge and into all four corners, then move your head — anything that shifts or fades is IPS glow, not bleed.",
+    ],
+    [
+      "grey-12",
+      "Near black separates the two. Real bleed stays pinned to the extreme edge of the panel; glow and clouding spread inward from it.",
+    ],
+    [
+      "grey-25",
+      "Dark grey should swallow bleed entirely. If a bright edge is still obvious at this level, it is severe enough to see in ordinary dark content.",
+    ],
+  ];
+
+  const fields: FieldDef[] = SPEC.flatMap(([slug, reveals]) => {
+    const fill = getFill(slug);
+    return fill
+      ? [{ id: fill.slug, name: fill.name, hex: fill.hex, reveals }]
+      : [];
+  });
+
+  mountFieldRunner({ fields, grid: true });
+</script>

@@ -1,0 +1,29 @@
+---
+/**
+ * Badge — small inline metadata pill.
+ */
+interface Props {
+  tone?: "neutral" | "info" | "warning" | "danger" | "success";
+  class?: string | undefined;
+}
+
+const { tone = "neutral", class: className } = Astro.props;
+
+const tones = {
+  neutral: "bg-canvas-soft-2 text-body",
+  info: "bg-link-bg-soft text-link-deep",
+  warning: "bg-warning-soft text-warning-deep",
+  danger: "bg-error-soft text-error-deep",
+  success: "bg-cyan-soft text-cyan-deep",
+};
+---
+
+<span
+  class:list={[
+    "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-caption font-medium whitespace-nowrap",
+    tones[tone],
+    className,
+  ]}
+>
+  <slot />
+</span>
